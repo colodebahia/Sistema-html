@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presupuesto - Pablo Peretto | Buena Huella</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{--primary:#2e7d32;--secondary:#1b5e20;--accent:#81c784;--bg:#f9fdf9;--text:#1b1b1b;--border:#c8e6c9}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding:20px}
+    .container{max-width:900px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);padding:32px}
+    header{border-bottom:3px solid var(--primary);padding-bottom:20px;margin-bottom:24px}
+    .logo{font-size:24px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:12px}
+    
+    /* Estilos para la imagen del logo */
+    .logo-img { height: 40px; width: auto; }
+    
+    .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:16px 0;font-size:14px;color:#555}
+    .client-box{background:var(--bg);border-left:4px solid var(--accent);padding:16px;margin:20px 0;border-radius:0 8px 8px 0}
+    table{width:100%;border-collapse:collapse;margin:20px 0}
+    th{background:var(--primary);color:#fff;padding:12px;text-align:left;font-weight:600}
+    td{padding:12px;border-bottom:1px solid var(--border)}
+    tr:hover{background:#f1f8f1}
+    .total-row{font-weight:700;font-size:1.1em;background:#e8f5e9}
+    .payment-terms{background:#fff8e1;border:1px solid #ffd54f;padding:16px;border-radius:8px;margin:20px 0}
+    .roi-box{background:var(--bg);border-radius:8px;padding:20px;margin:20px 0}
+    .chart-container{position:relative;height:250px;margin:20px 0}
+    footer{margin-top:32px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:#666;text-align:center}
+    .badge{display:inline-block;background:var(--primary);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+    .version{font-size:11px;color:#999;margin-top:8px}
+    @media print{body{padding:0}.container{box-shadow:none;border-radius:0}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <!-- 1. Intenta cargar logo.jpg. Si falla (onerror), se ejecuta el script -->
+        <img src="logo.jpg" alt="Logo Buena Huella" class="logo-img" 
+             onerror="this.style.display='none'; this.parentElement.querySelector('.fallback-emoji').style.display='inline-block';">
+        
+        <!-- 2. Emoji de respaldo (oculto por defecto, aparece si falla la imagen) -->
+        <span class="fallback-emoji" style="display:none; font-size:32px; margin-right: 8px;">🌱</span>
+        
+        <!-- Texto de la empresa -->
+        <span>Buena Huella S.A.S.</span>
+      </div>
+      
+      <div class="meta">
+        <div><strong>Presupuesto N°:</strong> BH-2026-062</div>
+        <div><strong>Fecha:</strong> <span id="fecha"></span></div>
+        <div><strong>Validez:</strong> 7 días</div>
+        <div><strong>Cotización:</strong> $1.398,50 ARS/USD (oficial vendedor)</div>
+      </div>
+    </header>
+
+    <div class="client-box">
+      <strong>Cliente:</strong> Pablo Peretto<br>
+      <strong>Ubicación:</strong> Luján, Buenos Aires<br>
+      <strong>Destino:</strong> 100 vacas de 300 kg promedio<br>
+      <strong>Equipamiento:</strong> Pastoreo seguro de alfalfa con dosificación inteligente + taninos
+    </div>
+
+    <h3>📦 Detalle de Ítems</h3>
+    <table>
+      <thead>
+        <tr><th>Producto</th><th>Cant.</th><th>P. Unit. (ARS)</th><th>Subtotal</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Dosificador IOT Básico — PORTÁTIL</strong><br><small>Programable por celular, panel solar, baterías litio. <strong>Diseño portátil para bidón de 20L</strong>: fácil de mover entre lotes, sin instalación fija.</small></td>
+          <td>4</td>
+          <td>$1.081.740</td>
+          <td>$4.326.960</td>
+        </tr>
+        <tr>
+          <td>Taninos 2 en 1 (bidón 20L)<br><small>Antiempaste + acción antiparasitaria interna · <strong>stock inicial</strong></small></td>
+          <td>10</td>
+          <td>$119.587</td>
+          <td>$1.195.870</td>
+        </tr>
+        <tr>
+          <td>Fórmula Triple (bidón 20L)<br><small>Tanino + polisiloxano + antiparasitario · para picos de riesgo · <strong>stock inicial</strong></small></td>
+          <td>10</td>
+          <td>$154.547</td>
+          <td>$1.545.470</td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="3">SUBTOTAL</td>
+          <td>$7.068.300</td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="3">IVA 21% <em>(incluido en precios unitarios)</em></td>
+          <td>$1.226.730</td>
+        </tr>
+        <tr class="total-row" style="font-size:1.2em;background:#c8e6c9">
+          <td colspan="3">TOTAL FINAL</td>
+          <td>$7.068.300</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="payment-terms">
+      <strong>💳 Condiciones de Pago</strong><br>
+      • Transferencia bancaria inmediata<br>
+      • Echeq en 3 cuotas iguales: 30 / 60 / 90 días<br>
+      <small>Alias: <strong>buena.huella.sas</strong> · CUIT: 33-71652578-9</small>
+    </div>
+
+    <div class="roi-box">
+      <h4>📈 Ejemplo de Uso: 100 vacas de 300 kg</h4>
+      <p><strong>Consumo base:</strong> 2.1 litros/día cada 100 vacas de 300 kg (dosis estándar con Taninos 2 en 1).</p>
+      <p><strong>Ajuste por condición:</strong></p>
+      <ul style="margin-left:20px;margin:12px 0">
+        <li>🌤️ <strong>Normal:</strong> 2.1 L/día → Taninos 2 en 1</li>
+        <li>⚠️ <strong>Riesgo medio:</strong> 4-5 L/día → Taninos 2 en 1 + ajuste de frecuencia</li>
+        <li>🔴 <strong>Pico crítico:</strong> 6-7 L/día → Activar Fórmula Triple (heladas + humedad + alfalfa muy verde + carga parasitaria)</li>
+      </ul>
+      <p><strong>Con Buena Huella:</strong> Dosificador IOT portátil te permite ajustar la dosis desde el celular en tiempo real, y mover el equipo entre lotes sin obra civil.</p>
+      <p><strong>ROI estimado (vs. sistema tradicional SIN alfalfa):</strong></p>
+      <ul style="margin-left:20px;margin:12px 0">
+        <li>📉 Sistema tradicional: ganancia ~650 g/día/vaca</li>
+        <li>📈 Con alfalfa + taninos: ganancia ~1.100-1.150 g/día/vaca</li>
+        <li>✅ Diferencia: <strong>+450-500 g/día/vaca</strong> + ahorro en desparasitantes químicos</li>
+      </ul>
+      <p><strong>→ Recuperás la inversión en menos de 3 semanas.</strong></p>
+      <div class="chart-container"><canvas id="roiChart"></canvas></div>
+    </div>
+
+    <footer>
+      <span class="badge">Responsable Inscripto</span><br>
+      Patricio Brizuela | +54 291 536-7751 | buenahuellasas@gmail.com<br>
+      www.buenahuella.com.ar<br>
+      <div class="version" id="version"></div>
+    </footer>
+  </div>
+
+  <script>
+    // Fecha y versión automática
+    document.getElementById('fecha').textContent = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'});
+    document.getElementById('version').textContent = `Versión: ${new Date().toISOString().replace('T',' ').substring(0,16)} · Generado para Pablo Peretto`;
+    
+    // Gráfico de ROI
+    const ctx = document.getElementById('roiChart').getContext('2d');
+    new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:['Semana 1','Semana 2','Semana 3','Semana 4'],
+        datasets:[{
+          label:'Retorno acumulado (ARS)',
+          data:[1800000,3600000,5400000,7200000],
+          backgroundColor:'#2e7d32',
+          borderColor:'#1b5e20',
+          borderWidth:1
+        }]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+(v/1e6).toFixed(1)+'M'}}}
+      }
+    });
+  </script>
+</body>
+</html>
+
