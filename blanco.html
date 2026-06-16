@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gestión de Costos - Bomba Solar</title>
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--p:#2563eb;--t:#0f172a;--m:#64748b;--b:#e2e8f0;--g:#10b981;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);padding:1rem;max-width:100%;margin:0 auto;-webkit-tap-highlight-color:transparent}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.clock{background:#dbeafe;color:var(--p);padding:.25rem .6rem;border-radius:var(--r);font-family:monospace;font-size:.8rem;border:1px solid #93c5fd}
+h1{font-size:1.1rem;font-weight:700;color:var(--t)}
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;background:var(--card);padding:.7rem;border-radius:var(--r);box-shadow:0 2px 5px rgba(0,0,0,.04);margin-bottom:.8rem;border:1px solid var(--b)}
+label{font-weight:500;font-size:.7rem;color:var(--m);display:block;margin-bottom:.15rem}
+input,select,button{width:100%;padding:.45rem;border:1px solid var(--b);border-radius:6px;font-size:.9rem;background:#fff}
+button{cursor:pointer;font-weight:600;color:#fff;background:var(--p);border:none;padding:.6rem;margin-top:.2rem}
+button:active{opacity:.8}
+button.secondary{background:#64748b}
+.tw{overflow-x:auto;background:var(--card);border-radius:var(--r);box-shadow:0 2px 5px rgba(0,0,0,.04);margin-bottom:.8rem;border:1px solid var(--b)}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th,td{padding:.4rem .5rem;text-align:left;border-bottom:1px solid var(--b);font-size:.75rem;vertical-align:middle}
+th{background:#f8fafc;font-weight:600;color:var(--m);position:sticky;top:0}
+td input,td select{width:100%;padding:.2rem;border:1px solid var(--b);border-radius:3px;font-size:.85rem}
+.tog{display:flex;gap:.2rem}
+.bt{padding:.15rem .35rem;font-size:.65rem;border:1px solid var(--b);border-radius:3px;cursor:pointer;background:#fff;color:var(--m)}
+.bt.on{background:var(--p);color:#fff;border-color:var(--p)}
+.fi{max-width:60px}.fi:disabled{background:#e2e8f0;opacity:.6}
+.tl{font-weight:600;color:var(--g);text-align:right;white-space:nowrap}
+.sum{background:var(--card);padding:.7rem;border-radius:var(--r);box-shadow:0 2px 5px rgba(0,0,0,.04);display:grid;grid-template-columns:1fr 1fr;gap:.6rem;border:1px solid var(--b)}
+.si{text-align:center}.sl{font-size:.6rem;color:var(--m);text-transform:uppercase}
+.sv{font-size:.9rem;font-weight:700;margin-top:.1rem}
+.st{grid-column:1/-1;background:#f8fafc;padding:.4rem;border-radius:5px;border:1px dashed var(--p)}.st .sv{color:var(--p)}
+.gross{grid-column:1/-1;background:#ecfdf5;padding:.5rem;border-radius:6px;border:1px solid #a7f3d0}
+.gross-row{display:flex;justify-content:space-between;font-size:.8rem;padding:.2rem 0;color:#065f46}
+.gross-row strong{color:#047857}
+.status{font-size:.7rem;color:var(--m);margin-top:.3rem;min-height:1.1rem}
+.status.ok{color:var(--g)}.status.err{color:#ef4444}
+
+/* Modal Presupuesto iOS-friendly */
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;padding:1rem}
+.modal.active{display:flex}
+.modal-sheet{background:#f0fdf4;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;border-radius:12px;border:2px solid #d1fae5;position:relative}
+.modal-header{padding:1rem;text-align:center;background:linear-gradient(135deg,#d1fae5,#a7f3d0);border-bottom:2px solid #059669}
+.modal-close{position:absolute;top:.5rem;right:.8rem;font-size:1.5rem;background:none;border:none;cursor:pointer;color:#065f46}
+.modal-body{padding:1.2rem}
+@media(min-width:768px){.ctrl{grid-template-columns:repeat(4,1fr)}.sum{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ Bomba Solar</h1>
+  <div id="clock" class="clock">--/--/-- --:--:--</div>
+</header>
+
+<section class="ctrl">
+  <div>
+    <label>Cliente</label>
+    <input type="text" id="cliente" placeholder="Nombre">
+  </div>
+  <div>
+    <label>USD (Oficial Vendedor)</label>
+    <input type="number" id="rate" placeholder="Ej: 1250" step="1" min="1">
+    <div id="dolarStatus" class="status">💡 Ingresá manual o pegá de dolarhoy.com</div>
+  </div>
+  <div>
+    <label>Potencia</label>
+    <select id="pump" onchange="calc()">
+      <option value="300W">300W</option>
+      <option value="400W">400W</option>
+    </select>
+  </div>
+  <div>
+    <label>Margen (%)</label>
+    <input type="number" id="margen" value="35" step="1" min="0">
+  </div>
+  <div style="grid-column:1/-1">
+    <button id="btnPresupuesto">📄 Vista Previa Presupuesto</button>
+  </div>
+</section>
+
+<div class="tw">
+  <table>
+    <thead>
+      <tr><th style="width:22%">Componente</th><th style="width:10%">Cant</th><th style="width:15%">P.Unit</th><th style="width:10%">Moneda</th><th style="width:15%">IVA</th><th style="width:15%">Flete</th><th style="width:13%">Total</th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<div class="sum">
+  <div class="si"><div class="sl">Base</div><div id="sb" class="sv">$0</div></div>
+  <div class="si"><div class="sl">IVA</div><div id="si2" class="sv">$0</div></div>
+  <div class="si"><div class="sl">Flete</div><div id="sf" class="sv">$0</div></div>
+  <div class="si st"><div class="sl">COSTO</div><div id="st" class="sv">$0</div></div>
+  <div class="gross">
+    <div class="gross-row"><span>Bruto (sin IVA)</span><strong id="grossSin">$0</strong></div>
+    <div class="gross-row"><span>Bruto (con IVA)</span><strong id="grossCon">$0</strong></div>
+  </div>
+</div>
+
+<!-- Modal Presupuesto -->
+<div id="modal" class="modal">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <button class="modal-close" onclick="document.getElementById('modal').classList.remove('active')">✕</button>
+      <h2 style="color:#047857;margin:0">🌱 PRESUPUESTO</h2>
+      <p style="font-size:.8rem;color:#065f46;margin-top:.2rem">Buena Huella SAS - Hilario Ascasubi</p>
+    </div>
+    <div id="modalContent" class="modal-body"></div>
+    <div style="padding:1rem;text-align:center">
+      <button onclick="window.print()" style="max-width:200px;margin:auto">🖨️ Imprimir / PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const IVA=0.21, F=new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:0});
+let COSTO_INTERNO=0, PRECIO_VENTA=0;
+const ITEMS=[
+  {id:'bomba',n:'Bomba centrífuga + MPPT',q:1,p:495000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'panel',n:'Panel solar 485W bifacial',q:1,p:220000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'soporte',n:'Soporte panel',q:1,p:353000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'manguera',n:'Manguera (10m)',q:1,p:30000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'cable',n:'Cable TPU 3x2.5mm (10m)',q:1,p:30000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'mano',n:'Mano de obra (8hs × 2 + prep.)',q:1,p:195000,c:'ARS',iva:true,fle:false,fv:0},
+  {id:'vianos',n:'Viáticos + viandas (km/día)',q:0,p:550,c:'ARS',iva:false,fle:false,fv:0}
+];
+
+// 💾 Cargar datos guardados
+function loadSaved(){
+  const r=localStorage.getItem('bs_rate'); if(r) document.getElementById('rate').value=r;
+  const c=localStorage.getItem('bs_cli'); if(c) document.getElementById('cliente').value=c;
+  const m=localStorage.getItem('bs_mar'); if(m) document.getElementById('margen').value=m;
+}
+
+function render(){
+  const t=document.getElementById('rows'); t.innerHTML='';
+  ITEMS.forEach(it=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><strong>${it.n}</strong></td>
+      <td><input type="number" class="q" value="${it.q}" min="0"></td>
+      <td><input type="number" class="p" value="${it.p}" min="0" step="1000"></td>
+      <td><select class="m"><option value="USD" ${it.c==='USD'?'selected':''}>USD</option><option value="ARS" ${it.c==='ARS'?'selected':''}>ARS</option></select></td>
+      <td><div class="tog"><button class="bt ${!it.iva?'on':''}" data-t="iva" data-v="0">Sin</button><button class="bt ${it.iva?'on':''}" data-t="iva" data-v="1">Con</button></div></td>
+      <td><div class="tog"><button class="bt ${!it.fle?'on':''}" data-t="fle" data-v="0">Sin</button><button class="bt ${it.fle?'on':''}" data-t="fle" data-v="1">Con</button></div><input type="number" class="fi" ${it.fle?'':'disabled'} placeholder="$"></td>
+      <td class="tl">$0</td>`;
+    t.appendChild(tr);
+  });
+  calc();
+}
+
+function calc(){
+  const r=parseFloat(document.getElementById('rate').value)||1;
+  localStorage.setItem('bs_rate',r);
+  localStorage.setItem('bs_cli',document.getElementById('cliente').value);
+  localStorage.setItem('bs_mar',document.getElementById('margen').value);
+  
+  let sb=0,si=0,sf=0;
+  document.querySelectorAll('#rows tr').forEach(tr=>{
+    const q=+tr.querySelector('.q').value||0;
+    let p=+tr.querySelector('.p').value||0;
+    const m=tr.querySelector('.m').value;
+    const iva=tr.querySelector('[data-t="iva"].on').dataset.v==='1';
+    const fle=tr.querySelector('[data-t="fle"].on').dataset.v==='1';
+    const fv=+tr.querySelector('.fi').value||0;
+    p=m==='USD'?p*r:p;
+    let base,ivaV;
+    if(!iva){base=p;ivaV=p*IVA;}else{base=p/(1+IVA);ivaV=p-base;}
+    const flev=fle?fv:0;
+    const tot=(base+ivaV+flev)*q;
+    tr.querySelector('.tl').textContent=F.format(tot);
+    sb+=base*q;si+=ivaV*q;sf+=flev*q;
+  });
+  COSTO_INTERNO=sb+si+sf;
+  const margen=parseFloat(document.getElementById('margen').value)||0;
+  PRECIO_VENTA=COSTO_INTERNO*(1+margen/100);
+  
+  document.getElementById('sb').textContent=F.format(sb);
+  document.getElementById('si2').textContent=F.format(si);
+  document.getElementById('sf').textContent=F.format(sf);
+  document.getElementById('st').textContent=F.format(COSTO_INTERNO);
+  document.getElementById('grossSin').textContent=F.format(PRECIO_VENTA-sb);
+  document.getElementById('grossCon').textContent=F.format(PRECIO_VENTA-COSTO_INTERNO);
+}
+
+document.getElementById('rate').addEventListener('input',calc);
+document.getElementById('margen').addEventListener('input',calc);
+document.getElementById('cliente').addEventListener('input',calc);
+document.getElementById('rows').addEventListener('input',e=>{if(e.target.matches('.q,.p,.m,.fi'))calc()});
+document.getElementById('rows').addEventListener('click',e=>{
+  const b=e.target.closest('.bt');if(!b)return;
+  const t=b.dataset.t,v=b.dataset.v;
+  b.parentElement.querySelectorAll('.bt').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  const fi=b.parentElement.parentElement.querySelector('.fi');
+  if(t==='fle'){fi.disabled=v==='0';if(v==='0')fi.value='';}
+  calc();
+});
+
+document.getElementById('btnPresupuesto').addEventListener('click',()=>{
+  calc();
+  const cliente=document.getElementById('cliente').value||'Cliente';
+  const pumpW=document.getElementById('pump').value;
+  const margen=parseFloat(document.getElementById('margen').value)||0;
+  const baseC=COSTO_INTERNO*(1+margen/100);
+  const ivaC=baseC*0.21;
+  const totalC=baseC+ivaC;
+  const fecha=new Date();
+  const fechaStr=fecha.toLocaleDateString('es-AR');
+  const venc=new Date(fecha);venc.setDate(venc.getDate()+7);
+  
+  const html=`
+    <div style="background:#f0fdfa;border-left:3px solid #10b981;padding:.8rem;margin-bottom:1rem;border-radius:6px">
+      <strong style="color:#047857">Cliente:</strong> ${cliente}<br>
+      <strong>Fecha:</strong> ${fechaStr} | <strong>Válido hasta:</strong> ${venc.toLocaleDateString('es-AR')}
+    </div>
+    <div style="background:#ecfdf5;padding:.8rem;border-radius:6px;margin-bottom:1rem;font-size:.9rem;color:#065f46">
+      <strong>Sistema de Bombeo Solar ${pumpW} - Pozo Poco Profundo</strong><br>
+      Suministro e instalación completa. Bomba centrífuga con MPPT, panel 485W, soporte, manguera y cableado TPU. <strong>Se entrega sacando agua.</strong>
+    </div>
+    <div style="background:#fff;padding:1rem;border-radius:8px;border:1px solid #d1fae5">
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px dashed #e2e8f0"><span>Subtotal</span><span>${F.format(baseC)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px dashed #e2e8f0"><span>IVA 21%</span><span>${F.format(ivaC)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:.8rem 0;margin-top:.3rem;font-size:1.2rem;font-weight:700;color:#047857"><span>PRESUPUESTO</span><span contenteditable="true" style="border-bottom:2px dashed #10b981;min-width:100px;text-align:right">${F.format(totalC)}</span></div>
+    </div>
+    <div style="font-size:.75rem;color:#6b7280;margin-top:1rem;text-align:center;line-height:1.4">
+      50% anticipo, 50% contra entrega. Transferencia, efectivo o cheque.<br>
+      🌍 Reduzcamos nuestra huella | © Buena Huella SAS
+    </div>`;
+  document.getElementById('modalContent').innerHTML=html;
+  document.getElementById('modal').classList.add('active');
+});
+
+function clock(){
+  const d=new Date();
+  document.getElementById('clock').textContent=`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// 🚀 INICIO
+window.addEventListener('DOMContentLoaded',()=>{
+  loadSaved(); render(); setInterval(clock,1000); clock();
+});
+</script>
+</body>
+</html>
+

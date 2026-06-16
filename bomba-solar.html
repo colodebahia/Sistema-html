@@ -1,0 +1,344 @@
+[2:29 p. m., 29/5/2026] Patricio Brizuela: <!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Costos - Bomba Solar</title>
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--p:#2563eb;--t:#0f172a;--m:#64748b;--b:#e2e8f0;--g:#10b981;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);padding:1rem;max-width:1100px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.clock{background:#dbeafe;color:var(--p);padding:.25rem .6rem;border-radius:var(--r);font-family:monospace;font-size:.8rem;border:1px solid #93c5fd;white-space:nowrap}
+h…
+[2:40 p. m., 29/5/2026] Patricio Brizuela: <!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Costos - Bomba Solar</title>
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--p:#2563eb;--t:#0f172a;--m:#64748b;--b:#e2e8f0;--g:#10b981;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);padding:1rem;max-width:1100px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.clock{background:#dbeafe;color:var(--p);padding:.25rem .6rem;border-radius:var(--r);font-family:monospace;font-size:.8rem;border:1px solid #93c5fd;white-space:nowrap}
+h…
+[2:45 p. m., 29/5/2026] Patricio Brizuela: <!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Costos - Bomba Solar</title>
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--p:#2563eb;--t:#0f172a;--m:#64748b;--b:#e2e8f0;--g:#10b981;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--t);padding:1rem;max-width:1100px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.clock{background:#dbeafe;color:var(--p);padding:.25rem .6rem;border-radius:var(--r);font-family:monospace;font-size:.8rem;border:1px solid #93c5fd;white-space:nowrap}
+h1{font-size:1.15rem;font-weight:700;color:var(--t)}
+.ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.5rem;background:var(--card);padding:.8rem;border-radius:var(--r);box-shadow:0 2px 5px rgba(0,0,0,.04);margin-bottom:1rem;border:1px solid var(--b)}
+label{font-weight:500;font-size:.7rem;color:var(--m);display:block;margin-bottom:.15rem}
+input,select,button{width:100%;padding:.35rem;border:1px solid var(--b);border-radius:4px;font-size:.8rem;background:#fff}
+button{cursor:pointer;font-weight:600;color:#fff;background:var(--p);border:none;padding:.5rem;margin-top:.2rem}
+button:hover{background:#1d4ed8}
+button.secondary{background:#64748b}
+button.secondary:hover{background:#475569}
+.dlink{font-size:.65rem;color:var(--p);text-decoration:none;display:inline-block;margin-top:.1rem}
+.tw{overflow-x:auto;background:var(--card);border-radius:var(--r);box-shadow:0 2px 5px rgba(0,0,0,.04);margin-bottom:1rem}
+table{width:100%;border-collapse:collapse;min-width:780px}
+th,td{padding:.45rem .5rem;text-align:left;border-bottom:1px solid var(--b);font-size:.75rem;vertical-align:middle}
+th{background:#f8fafc;font-weight:600;color:var(--m);position:sticky;top:0}
+td input,td select{width:100%;padding:.25rem;border:1px solid var(--b);border-radius:3px}
+.tog{display:flex;gap:.2rem}
+.bt{padding:.15rem .35rem;font-size:.65rem;border:1px solid var(--b);border-radius:3px;cursor:pointer;background:#fff;color:var(--m)}
+.bt.on{background:var(--p);color:#fff;border-color:var(--p)}
+.fi{max-width:60px}.fi:disabled{background:#e2e8f0;opacity:.6;cursor:not-allowed}
+.tl{font-weight:600;color:var(--g);text-align:right;white-space:nowrap}
+.sum{background:var(--card);padding:.8rem;border-radius:var(--r);box-shadow:0 2px 5px rgba(0,0,0,.04);display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;border:1px solid var(--b)}
+.si{text-align:center}.sl{font-size:.6rem;color:var(--m);text-transform:uppercase;letter-spacing:.4px}
+.sv{font-size:.95rem;font-weight:700;margin-top:.1rem}
+.st{grid-column:1/-1;background:#f8fafc;padding:.4rem;border-radius:5px;border:1px dashed var(--p)}.st .sv{color:var(--p);font-size:1.1rem}
+.gross{grid-column:1/-1;background:#ecfdf5;padding:.6rem;border-radius:6px;border:1px solid #a7f3d0;margin-top:.3rem}
+.gross-row{display:flex;justify-content:space-between;font-size:.85rem;padding:.2rem 0;color:#065f46}
+.gross-row strong{color:#047857}
+.status{font-size:.7rem;color:var(--m);margin-top:.3rem;min-height:1.2rem}
+.status.ok{color:var(--g)}.status.err{color:#ef4444}
+@media(max-width:650px){.ctrl,.sum{grid-template-columns:1fr}th,td{padding:.35rem .2rem}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙️ Gestión de Costos - Bomba Solar</h1>
+  <div id="clock" class="clock">--/--/-- --:--:--</div>
+</header>
+
+<section class="ctrl">
+  <div>
+    <label>Nombre del Cliente</label>
+    <input type="text" id="cliente" placeholder="Ej: Juan Pérez">
+  </div>
+  <div>
+    <label>Cotización USD (Oficial Vendedor)</label>
+    <div style="display:flex;gap:.3rem">
+      <input type="number" id="rate" value="0" step="1" min="1" style="flex:1">
+      <button id="btnRefresh" class="secondary" style="width:auto;padding:.35rem .6rem;font-size:.8rem" title="Actualizar desde API">🔄</button>
+    </div>
+    <div id="dolarStatus" class="status">⏳ Cargando...</div>
+  </div>
+  <div>
+    <label>Potencia Bomba</label>
+    <select id="pump" onchange="calc()">
+      <option value="300W">300W</option>
+      <option value="400W">400W</option>
+    </select>
+  </div>
+  <div>
+    <label>Margen Bruto (%)</label>
+    <input type="number" id="margen" value="35" step="1" min="0">
+  </div>
+  <button id="btnPresupuesto">📄 Generar Presupuesto Cliente</button>
+</section>
+
+<div class="tw">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:22%">Componente</th>
+        <th style="width:8%">Cant</th>
+        <th style="width:13%">P.Unit</th>
+        <th style="width:8%">Moneda</th>
+        <th style="width:13%">IVA</th>
+        <th style="width:13%">Flete</th>
+        <th style="width:13%">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<div class="sum">
+  <div class="si"><div class="sl">Costo Base</div><div id="sb" class="sv">$0,00</div></div>
+  <div class="si"><div class="sl">IVA Costo</div><div id="si2" class="sv">$0,00</div></div>
+  <div class="si"><div class="sl">Flete Costo</div><div id="sf" class="sv">$0,00</div></div>
+  <div class="si st"><div class="sl">COSTO INTERNO</div><div id="st" class="sv">$0,00</div></div>
+  <div class="gross">
+    <div class="gross-row"><span>Valor Bruto (sin IVA)</span><strong id="grossSin">$0,00</strong></div>
+    <div class="gross-row"><span>Valor Bruto (con IVA)</span><strong id="grossCon">$0,00</strong></div>
+  </div>
+</div>
+
+<script>
+const IVA=0.21, F=new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:2});
+let COSTO_INTERNO=0, PRECIO_VENTA=0;
+
+// ✅ TODOS LOS ÍTEMS EXACTOS
+const ITEMS=[
+  {id:'bomba',n:'Bomba centrífuga + MPPT',q:1,p:495000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'panel',n:'Panel solar 485W bifacial',q:1,p:220000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'soporte',n:'Soporte panel',q:1,p:353000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'manguera',n:'Manguera (10m)',q:1,p:30000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'cable',n:'Cable TPU 3x2.5mm (10m)',q:1,p:30000,c:'ARS',iva:true,fle:true,fv:0},
+  {id:'mano',n:'Mano de obra (8hs × 2 personas + preparación)',q:1,p:195000,c:'ARS',iva:true,fle:false,fv:0},
+  {id:'vianos',n:'Viáticos + viandas (km/día)',q:0,p:550,c:'ARS',iva:false,fle:false,fv:0}
+];
+
+// 🌐 ACTUALIZACIÓN AUTOMÁTICA CON DOLARAPI
+async function fetchDolar(){
+  const input=document.getElementById('rate');
+  const status=document.getElementById('dolarStatus');
+  status.textContent='⏳ Consultando API...'; status.className='status';
+  
+  try{
+    const res=await fetch('https://dolarapi.com/v1/dolares/oficial');
+    if(!res.ok) throw new Error('Red no disponible');
+    const data=await res.json();
+    const valor=Math.round(data.venta);
+    input.value=valor;
+    localStorage.setItem('bombaSolar_rate', valor);
+    status.textContent='✅ Actualizado vía API'; status.className='status ok';
+    calc();
+  }catch(e){
+    // Fallback a localStorage o valor manual
+    const saved=localStorage.getItem('bombaSolar_rate');
+    if(saved) input.value=saved;
+    status.textContent=saved ? '💾 Usando último guardado (sin API)' : '⚠️ Sin conexión. Ingresá manual.';
+    status.className='status err';
+    if(saved) calc();
+  }
+}
+
+function render(){
+  const t=document.getElementById('rows'); t.innerHTML='';
+  ITEMS.forEach(it=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><strong>${it.n}</strong></td>
+      <td><input type="number" class="q" value="${it.q}" min="0"></td>
+      <td><input type="number" class="p" value="${it.p}" min="0" step="0.01"></td>
+      <td><select class="m"><option value="USD" ${it.c==='USD'?'selected':''}>USD</option><option value="ARS" ${it.c==='ARS'?'selected':''}>ARS</option></select></td>
+      <td><div class="tog"><button class="bt ${!it.iva?'on':''}" data-t="iva" data-v="0">Sin</button><button class="bt ${it.iva?'on':''}" data-t="iva" data-v="1">Con</button></div></td>
+      <td><div class="tog"><button class="bt ${!it.fle?'on':''}" data-t="fle" data-v="0">Sin</button><button class="bt ${it.fle?'on':''}" data-t="fle" data-v="1">Con</button></div><input type="number" class="fi" ${it.fle?'':'disabled'} placeholder="$"></td>
+      <td class="tl">$0,00</td>`;
+    t.appendChild(tr);
+  });
+  calc();
+}
+
+function calc(){
+  const r=parseFloat(document.getElementById('rate').value)||1;
+  let sb=0,si=0,sf=0;
+  document.querySelectorAll('#rows tr').forEach(tr=>{
+    const q=+tr.querySelector('.q').value||0;
+    let p=+tr.querySelector('.p').value||0;
+    const m=tr.querySelector('.m').value;
+    const iva=tr.querySelector('[data-t="iva"].on').dataset.v==='1';
+    const fle=tr.querySelector('[data-t="fle"].on').dataset.v==='1';
+    const fv=+tr.querySelector('.fi').value||0;
+    p=m==='USD'?p*r:p;
+    let base,ivaV;
+    if(!iva){base=p;ivaV=p*IVA;}else{base=p/(1+IVA);ivaV=p-base;}
+    const flev=fle?fv:0;
+    const tot=(base+ivaV+flev)*q;
+    tr.querySelector('.tl').textContent=F.format(tot);
+    sb+=base*q;si+=ivaV*q;sf+=flev*q;
+  });
+  COSTO_INTERNO=sb+si+sf;
+  const margen=parseFloat(document.getElementById('margen').value)||0;
+  PRECIO_VENTA=COSTO_INTERNO*(1+margen/100);
+  
+  document.getElementById('sb').textContent=F.format(sb);
+  document.getElementById('si2').textContent=F.format(si);
+  document.getElementById('sf').textContent=F.format(sf);
+  document.getElementById('st').textContent=F.format(COSTO_INTERNO);
+  
+  document.getElementById('grossSin').textContent=F.format(PRECIO_VENTA-sb);
+  document.getElementById('grossCon').textContent=F.format(PRECIO_VENTA-COSTO_INTERNO);
+}
+
+document.getElementById('btnRefresh').addEventListener('click', fetchDolar);
+document.getElementById('rows').addEventListener('input',e=>{if(e.target.matches('.q,.p,.m,.fi,#rate,#margen'))calc();});
+document.getElementById('rows').addEventListener('click',e=>{
+  const b=e.target.closest('.bt');if(!b)return;
+  const t=b.dataset.t,v=b.dataset.v;
+  b.parentElement.querySelectorAll('.bt').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  const fi=b.parentElement.parentElement.querySelector('.fi');
+  if(t==='fle'){fi.disabled=v==='0';if(v==='0')fi.value='';}
+  calc();
+});
+
+document.getElementById('btnPresupuesto').addEventListener('click',()=>{
+  calc();
+  const cliente=document.getElementById('cliente').value||'Cliente';
+  const pumpW=document.getElementById('pump').value;
+  const margen=parseFloat(document.getElementById('margen').value)||0;
+  const baseC=COSTO_INTERNO*(1+margen/100);
+  const ivaC=baseC*0.21;
+  const totalC=baseC+ivaC;
+  const fecha=new Date();
+  const fechaStr=fecha.toLocaleDateString('es-AR');
+  const venc=new Date(fecha);venc.setDate(venc.getDate()+7);
+  const vencStr=venc.toLocaleDateString('es-AR');
+  
+  const html=`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presupuesto - ${cliente} | Buena Huella</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0fdf4;color:#0f172a;line-height:1.6;padding:2rem}
+  .sheet{max-width:700px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(5,150,105,0.12);overflow:hidden;border:2px solid #d1fae5}
+  .header{padding:2rem 2.5rem;background:linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%);border-bottom:3px solid #059669;text-align:center}
+  .logo{font-size:2.2rem;margin-bottom:0.5rem}
+  .header h1{color:#047857;font-size:1.5rem;font-weight:700;margin-bottom:0.3rem}
+  .header p{color:#065f46;font-size:0.9rem;font-weight:500}
+  .meta{padding:1.2rem 2.5rem;background:#f0fdfa;border-bottom:1px solid #a7f3d0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.8rem}
+  .meta-item{font-size:0.85rem;color:#065f46}
+  .meta-item strong{color:#047857}
+  .content{padding:2rem 2.5rem}
+  .desc{background:#ecfdf5;padding:1rem 1.2rem;border-radius:8px;border-left:4px solid #10b981;margin-bottom:1.5rem;font-size:0.95rem;color:#065f46;line-height:1.7}
+  .totals{margin-top:2rem}
+  .row{display:flex;justify-content:space-between;padding:0.9rem 0;border-bottom:1px solid #d1fae5;font-size:0.95rem;color:#374151}
+  .row.total{border-top:3px solid #059669;border-bottom:none;padding-top:1.2rem;margin-top:0.5rem;font-size:1.3rem;font-weight:700;color:#047857;background:#f0fdf4;padding:1rem;border-radius:8px}
+  .editable{margin-top:0.5rem;padding:0.6rem;background:#fff;border:2px dashed #10b981;border-radius:6px;text-align:center}
+  .editable input{font-size:1.3rem;font-weight:700;color:#059669;border:none;text-align:center;width:180px;background:transparent}
+  .editable small{display:block;color:#6b7280;font-size:0.75rem;margin-top:0.3rem}
+  .footer{padding:1.5rem 2.5rem;background:#f0fdf4;border-top:2px solid #a7f3d0;font-size:0.8rem;color:#065f46;text-align:center;line-height:1.6}
+  .footer strong{color:#047857}
+  .vision{background:#ecfdf5;padding:1rem;margin:1rem 0;border-radius:8px;font-style:italic;color:#065f46}
+  .actions{margin-top:1.5rem;text-align:center;padding-bottom:2rem}
+  .btn{display:inline-block;padding:0.8rem 2.5rem;background:#059669;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;text-decoration:none;font-size:1rem;box-shadow:0 4px 6px rgba(5,150,105,0.2)}
+  .btn:hover{background:#047857;transform:translateY(-2px);box-shadow:0 6px 12px rgba(5,150,105,0.3)}
+  @media print{body{padding:0;background:#fff}.sheet{box-shadow:none;border-radius:0;border:none}.actions{display:none}}
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="header">
+      <div class="logo">🌱</div>
+      <h1>BUENA HUELLA SAS</h1>
+      <p>Comprometidos con la sostenibilidad</p>
+      <p style="font-size:0.8rem;margin-top:0.3rem;color:#065f46">Hilario Ascasubi, Villarino - Buenos Aires</p>
+    </div>
+    <div class="meta">
+      <div class="meta-item"><strong>Cliente:</strong> ${cliente}</div>
+      <div class="meta-item"><strong>Fecha:</strong> ${fechaStr}</div>
+      <div class="meta-item"><strong>Válido hasta:</strong> ${vencStr}</div>
+    </div>
+    <div class="content">
+      <div class="desc">
+        <strong style="color:#047857">Sistema de Bombeo Solar ${pumpW} - Pozo Poco Profundo</strong><br>
+        Suministro e instalación completa. Bomba centrífuga con controlador MPPT, panel solar bifacial 485W, soporte estructural, manguera y cableado TPU. <strong>Se entrega sacando agua.</strong>
+      </div>
+      <div class="vision">
+        <strong>🌿 Nuestra visión:</strong> Pensamos en el largo plazo, en los que vienen. Compartimos nuestros conocimientos tecnológicos con los productores. Hacemos realidad ideas buscando producir en armonía con el medio sin resignar rentabilidad.
+      </div>
+      <div class="totals">
+        <div class="row"><span>Subtotal (sin IVA)</span><span>${F.format(baseC)}</span></div>
+        <div class="row"><span>IVA (21%)</span><span>${F.format(ivaC)}</span></div>
+        <div class="row total">
+          <span>PRESUPUESTO</span>
+          <span>
+            <div class="editable">
+              <input type="number" id="totalEdit" value="${Math.round(totalC)}" oninput="document.getElementById('totalDisplay').textContent=Number(this.value).toLocaleString('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:2})">
+              <small>💡 Clic para editar</small>
+            </div>
+            <div id="totalDisplay" style="margin-top:0.4rem">${F.format(totalC)}</div>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <strong>Condiciones de pago:</strong> 50% anticipo, 50% contra entrega<br>
+      Formas de pago: Transferencia, efectivo o cheque<br>
+      <strong style="margin-top:0.5rem;display:block;font-size:0.9rem">🌍 Reduzcamos nuestra huella</strong>
+      <small style="display:block;margin-top:0.3rem;color:#6b7280">© Buena Huella SAS 2026 - Tecnología para regenerar el medio</small>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+</body>
+</html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);w.document.close();
+});
+
+function clock(){
+  const d=new Date();
+  document.getElementById('clock').textContent=${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')};
+}
+
+// 🚀 INICIO
+window.addEventListener('DOMContentLoaded', ()=>{
+  fetchDolar();
+  render();
+  setInterval(clock, 1000);
+  clock();
+});
+</script>
+</body>
+</html>
