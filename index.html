@@ -8,18 +8,71 @@
 </head>
 <body>
 <header><h1>BUENA HUELLA SAS GESTION</h1></header>
+<header style="background:#075; color:#fff;padding:12px 16px">
+  <div style="max-width:1000px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <h1 style="margin:0;font-size:18px">BUENA HUELLA SAS GESTION</h1>
+    <nav style="display:flex;gap:12px;align-items:center">
+      <a href="index.html" style="color:#fff;text-decoration:none">Inicio</a>
+      <a href="clientes.html" style="color:#fff;text-decoration:none">Clientes</a>
+      <a href="productos.html" style="color:#fff;text-decoration:none">Productos</a>
+      <a href="presupuestos.html" style="color:#fff;text-decoration:none">Presupuestos</a>
+      <a href="proyectos.html" style="color:#fff;text-decoration:none">Proyectos</a>
+      <a href="proveedores.html" style="color:#fff;text-decoration:none">Proveedores</a>
+      <a href="operarios.html" style="color:#fff;text-decoration:none">Operarios</a>
+    </nav>
+  </div>
+</header>
+
 <main>
-<p>Bienvenido. Usar la <a href="referencia.html">referencia</a> para documentación y contenido detallado.</p>
-<nav>
-<a href="referencia.html">Referencia</a>
-<a href="clientes.html">Clientes</a>
-<a href="presupuestos.html">Presupuestos</a>
-<a href="proyectos.html">Proyectos</a>
-<a href="orden-de-compras.html">Orden de Compras</a>
-<a href="proveedores.html">Proveedores</a>
-<a href="operarios.html">Operarios</a>
-</nav>
+  <div style="max-width:1000px;margin:18px auto;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start">
+    <section style="background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06)">
+      <h2>Datos de la empresa</h2>
+      <p><strong>Razón Social:</strong> Buena Huella S.A.S.<br>
+      <strong>CUIT:</strong> 33-71652578-9<br>
+      <strong>Domicilio:</strong> San Martín 409, Partido de Villarino, Buenos Aires<br>
+      <strong>Responsable:</strong> Patricio Brizuela<br>
+      <strong>Teléfono:</strong> +54 291 536-7751<br>
+      <strong>Email:</strong> buenahuellasas@gmail.com<br>
+      <strong>Web:</strong> www.buenahuella.com.ar</p>
+
+      <p>Accesos rápidos:
+        <a href="clientes.html">Clientes</a> ·
+        <a href="productos.html">Productos</a> ·
+        <a href="presupuestos.html">Presupuestos</a>
+      </p>
+    </section>
+
+    <aside style="background:#fff;padding:16px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06)">
+      <h3>Tipo de cambio</h3>
+      <p>Dólar oficial (vendedor): <strong id="dolar">Cargando...</strong></p>
+      <p style="font-size:12px;color:#666">Última actualización: <span id="rate-time">-</span></p>
+      <p style="margin-top:12px"><a href="presupuestos.html">Crear presupuesto</a></p>
+    </aside>
+  </div>
 </main>
+
+<script>
+async function fetchDolar(){
+  const el=document.getElementById('dolar');
+  const timeEl=document.getElementById('rate-time');
+  try{
+    const res=await fetch('https://api.bluelytics.com.ar/v2/latest');
+    if(!res.ok) throw new Error(res.status);
+    const data=await res.json();
+    const rate = data?.oficial?.value_sell || data?.oficial?.value_buy || null;
+    const now = new Date().toLocaleString();
+    if(rate){ el.textContent = rate + ' ARS'; timeEl.textContent = now; localStorage.setItem('buena_dolar_oficial', JSON.stringify({rate:rate,at:now})); }
+    else throw new Error('rate not found');
+  }catch(err){
+    const saved=localStorage.getItem('buena_dolar_oficial');
+    if(saved){ const obj=JSON.parse(saved); el.textContent = obj.rate + ' ARS (cached)'; timeEl.textContent = obj.at + ' (cached)'; }
+    else { el.textContent = 'No disponible'; timeEl.textContent = '-'; }
+    console.warn('fetchDolar error',err);
+  }
+}
+fetchDolar();
+setInterval(fetchDolar,10*60*1000);
+</script>
 <footer style="text-align:center;color:#666;font-size:13px;margin:20px 0">Buena Huella S.A.S.</footer>
 </body>
 </html>

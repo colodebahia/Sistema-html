@@ -1,8 +1,140 @@
 <!doctype html>
 <html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Presupuestos - Buena Huella</title></head>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Presupuestos - Buena Huella</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#f5f5f5;margin:0}
+    header{background:#2d5a27;color:#fff;padding:14px;text-align:center}
+    .wrap{max-width:1100px;margin:16px auto;padding:12px}
+    .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06)}
+    input,select,textarea{padding:8px;border:1px solid #ddd;border-radius:6px;width:100%}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+    .btn{background:#2d5a27;color:#fff;padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
+    .btn.secondary{background:#eee;color:#333}
+    @media print{.no-print{display:none} body{background:#fff}}
+    .right{text-align:right}
+    .sidebar{width:320px}
+    .layout{display:grid;grid-template-columns:1fr 320px;gap:12px}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}}
+  </style>
+</head>
 <body>
-  <h1>Presupuestos</h1>
-  <p>Página placeholder. Volver a <a href="index.html">inicio</a>.</p>
+  <header><h1>Presupuestos — Buena Huella</h1></header>
+  <div class="wrap">
+    <div class="card layout">
+      <div>
+        <div class="no-print" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <select id="clientSelect"><option value="">-- Seleccionar cliente --</option></select>
+          <button class="btn" id="newClientBtn">Nuevo</button>
+          <button class="btn secondary" id="loadClientBtn">Cargar cliente</button>
+          <button class="btn" id="printBtn">Imprimir / Guardar PDF</button>
+          <button class="btn secondary" id="saveBudgetBtn">Guardar presupuesto</button>
+        </div>
+
+        <div id="presupuesto">
+          <h2 id="clienteNombre">Cliente: -</h2>
+          <p id="clienteContacto">Contacto: -</p>
+          <table id="itemsTable">
+            <thead><tr><th>Descripción</th><th>Cant</th><th>Unit (USD)</th><th>Subtotal (USD)</th><th>Subtotal (ARS)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input id="desc" placeholder="Descripción" style="flex:2" />
+            <input id="qty" type="number" value="1" style="width:80px" />
+            <input id="unitUsd" type="number" step="0.01" placeholder="Unit USD" style="width:110px" />
+            <button class="btn secondary no-print" id="addItemBtn">Agregar</button>
+          </div>
+
+          <div style="margin-top:12px;text-align:right">
+            <div>Tipo de cambio (oficial vendedor): <span id="rate">-</span></div>
+            <div style="font-weight:700;font-size:18px">Total USD: $<span id="totalUsd">0.00</span> · Total ARS: $<span id="totalArs">0.00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="sidebar">
+        <div style="margin-bottom:12px">
+          <h3>Historial de presupuestos</h3>
+          <div id="historyList"></div>
+        </div>
+        <div>
+          <h3>Acciones</h3>
+          <button class="btn" id="exportAllBtn">Exportar todo (JSON)</button>
+          <button class="btn secondary" id="clearAllBtn">Borrar historial</button>
+        </div>
+      </aside>
+    </div>
+    <p style="margin-top:10px" class="no-print">Volver al <a href="index.html">inicio</a></p>
+  </div>
+
+  <script>
+    const CLIENTS_KEY = 'buena_clients_v1';
+    const BUDGETS_KEY = 'buena_presupuestos_v1';
+    function readClients(){try{return JSON.parse(localStorage.getItem(CLIENTS_KEY)||'[]')}catch(e){return[]}}
+    function readBudgets(){try{return JSON.parse(localStorage.getItem(BUDGETS_KEY)||'[]')}catch(e){return[]}}
+    function saveBudgets(list){localStorage.setItem(BUDGETS_KEY,JSON.stringify(list))}
+
+    const clientSelect = document.getElementById('clientSelect');
+    const historyList = document.getElementById('historyList');
+
+    function populateClients(){ const cl = readClients(); clientSelect.innerHTML = '<option value="">-- Seleccionar cliente --</option>'; for(const c of cl){ const opt = document.createElement('option'); opt.value=c.id; opt.textContent=c.name; clientSelect.appendChild(opt)} }
+    function renderHistory(){ const list = readBudgets(); if(!list.length){ historyList.innerHTML = '<p class="small">No hay presupuestos guardados.</p>'; return } historyList.innerHTML = ''; for(const b of list.slice().reverse()){ const el = document.createElement('div'); el.style.border='1px solid #eee'; el.style.padding='6px'; el.style.marginBottom='6px'; el.innerHTML = `<strong>${escapeHtml(b.clientName||'Sin cliente')}</strong><br><small>${new Date(b.at).toLocaleString()}</small><div style="margin-top:6px"><button class="btn" data-id="${b.id}" data-action="load">Cargar</button> <button class="btn secondary" data-id="${b.id}" data-action="download">Descargar</button> <button class="btn secondary" data-id="${b.id}" data-action="delete">Borrar</button></div>`; historyList.appendChild(el) }
+    }
+
+    function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    populateClients(); renderHistory();
+
+    document.getElementById('loadClientBtn').addEventListener('click',()=>{
+      const id = clientSelect.value; if(!id) return alert('Seleccioná un cliente'); const c = readClients().find(x=>x.id===id); if(!c) return; document.getElementById('clienteNombre').textContent = 'Cliente: '+c.name; document.getElementById('clienteContacto').textContent = 'Contacto: '+(c.phone||c.email||' - ');
+    })
+
+    // items
+    function addItem(desc,qty,unitUsd){ const tbody = document.querySelector('#itemsTable tbody'); const row = document.createElement('tr'); const subUsd = (qty*unitUsd)||0; const rateObj = JSON.parse(localStorage.getItem('buena_dolar_oficial')||'null'); const rate = rateObj?Number(rateObj.rate):null; const subArs = rate? (subUsd*rate).toFixed(2) : '-'; row.innerHTML = `<td>${escapeHtml(desc)}</td><td class="right">${qty}</td><td class="right">${Number(unitUsd).toFixed(2)}</td><td class="right">${Number(subUsd).toFixed(2)}</td><td class="right">${subArs}</td>`; tbody.appendChild(row); recalcTotals(); }
+    document.getElementById('addItemBtn').addEventListener('click',()=>{ const d=document.getElementById('desc').value.trim(); const q=Number(document.getElementById('qty').value)||1; const u=Number(document.getElementById('unitUsd').value)||0; if(!d) return alert('Ingresar descripción'); addItem(d,q,u); document.getElementById('desc').value=''; document.getElementById('unitUsd').value=''; })
+
+    function recalcTotals(){ const rows = document.querySelectorAll('#itemsTable tbody tr'); let totalUsd=0; let totalArs=0; const rateObj = JSON.parse(localStorage.getItem('buena_dolar_oficial')||'null'); const rate = rateObj?Number(rateObj.rate):null; rows.forEach(r=>{ const usd = Number(r.children[3].textContent)||0; totalUsd += usd; if(rate){ const ars = usd*rate; totalArs += ars; r.children[4].textContent = ars.toFixed(2) } else { r.children[4].textContent = '-' } }); document.getElementById('totalUsd').textContent = totalUsd.toFixed(2); document.getElementById('totalArs').textContent = rate?totalArs.toFixed(2):( '-'); document.getElementById('rate').textContent = rate? rate+' ARS' : 'No disponible'; }
+
+    // load saved rate
+    (function(){ const r = localStorage.getItem('buena_dolar_oficial'); if(r){ try{ const obj=JSON.parse(r); document.getElementById('rate').textContent = obj.rate+' ARS'; }catch(e){} } })();
+
+    // Print
+    document.getElementById('printBtn').addEventListener('click',()=>{ window.print(); })
+
+    // Save budget
+    document.getElementById('saveBudgetBtn').addEventListener('click',()=>{
+      const items = []; document.querySelectorAll('#itemsTable tbody tr').forEach(r=>{ items.push({desc:r.children[0].textContent, qty:Number(r.children[1].textContent), unitUsd:Number(r.children[2].textContent), subtotalUsd:Number(r.children[3].textContent), subtotalArs:(r.children[4].textContent==='-'?null:Number(r.children[4].textContent)) }) });
+      if(items.length===0) return alert('Agregar al menos un item');
+      const clientId = clientSelect.value || null; const client = clientId? (readClients().find(c=>c.id===clientId) || null) : null; const totalUsd = Number(document.getElementById('totalUsd').textContent)||0; const totalArs = document.getElementById('totalArs').textContent==='-'?null:Number(document.getElementById('totalArs').textContent);
+      const bud = { id: Date.now().toString(36), at: new Date().toISOString(), clientId: clientId, clientName: client?client.name:document.getElementById('clienteNombre').textContent.replace('Cliente: ','') , items, totalUsd, totalArs };
+      const list = readBudgets(); list.push(bud); saveBudgets(list); renderHistory(); alert('Presupuesto guardado');
+    })
+
+    // history actions
+    historyList.addEventListener('click', (e)=>{
+      const id = e.target.getAttribute('data-id'); const action = e.target.getAttribute('data-action'); if(!id||!action) return; if(action==='load'){ loadBudget(id) } else if(action==='download'){ downloadBudget(id) } else if(action==='delete'){ if(confirm('Borrar presupuesto?')){ deleteBudget(id) } }
+    })
+
+    function loadBudget(id){ const list = readBudgets(); const b = list.find(x=>x.id===id); if(!b) return alert('No encontrado'); // populate UI
+      document.getElementById('clienteNombre').textContent = 'Cliente: '+(b.clientName||'-'); document.getElementById('clienteContacto').textContent = b.clientId? ( (readClients().find(c=>c.id===b.clientId)||{}).phone || (readClients().find(c=>c.id===b.clientId)||{}).email || '' ) : '';
+      const tbody = document.querySelector('#itemsTable tbody'); tbody.innerHTML=''; for(const it of b.items){ addItem(it.desc,it.qty,it.unitUsd) }
+    }
+
+    function downloadBudget(id){ const b = readBudgets().find(x=>x.id===id); if(!b) return; const blob = new Blob([JSON.stringify(b,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(b.clientName||'presupuesto')+'_'+b.id+'.json'; a.click(); URL.revokeObjectURL(a.href);
+    }
+
+    function deleteBudget(id){ let list = readBudgets(); list = list.filter(x=>x.id!==id); saveBudgets(list); renderHistory(); }
+
+    // export/clear
+    document.getElementById('exportAllBtn').addEventListener('click',()=>{ const data = JSON.stringify(readBudgets()); const blob = new Blob([data],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='presupuestos.json'; a.click(); URL.revokeObjectURL(a.href); })
+    document.getElementById('clearAllBtn').addEventListener('click',()=>{ if(confirm('Borrar todo el historial de presupuestos?')){ saveBudgets([]); renderHistory(); alert('Historial borrado') } })
+
+    // New client quick link
+    document.getElementById('newClientBtn').addEventListener('click',()=>{ location.href='clientes.html' })
+  </script>
 </body>
 </html>
