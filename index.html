@@ -4,49 +4,92 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BUENA HUELLA SAS GESTION</title>
-<style>body{font-family:Arial,Helvetica,sans-serif;background:#f5f5f5;margin:0}header{background:#2d5a27;color:#fff;padding:20px;text-align:center}main{max-width:900px;margin:30px auto;padding:20px;background:#fff;border-radius:8px}nav a{display:inline-block;margin:6px;padding:8px 12px;background:#e8f5e9;color:#2d5a27;border-radius:6px;text-decoration:none}</style>
+<style>
+  :root{--green-700:#2d5a27;--green-800:#075;--accent:#4a8a3a;--muted:#6b6b6b}
+  body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:#f6f7f8;margin:0;color:#222}
+  header.site-top{background:linear-gradient(90deg,var(--green-800),var(--green-700));color:#fff;padding:18px}
+  header.site-top h1{margin:0;font-size:20px;letter-spacing:0.4px}
+  nav.primary{display:flex;gap:10px;align-items:center}
+  nav.primary a{color:#fff;text-decoration:none;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);font-weight:600}
+  .hero{background:linear-gradient(180deg,rgba(74,138,58,0.08),transparent);padding:36px 20px;border-bottom:1px solid rgba(0,0,0,0.04)}
+  .hero h2{margin:0 0 8px 0;font-size:22px;color:var(--green-800)}
+  .hero p.lead{margin:0;color:#333;opacity:0.95}
+  .container{max-width:1000px;margin:18px auto;padding:0 16px}
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+  .card{background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06)}
+  .muted{color:var(--muted);font-size:13px}
+  footer{ text-align:center;color:#888;font-size:13px;margin:28px 0 }
+  a.link{color:var(--accent)}
+
+  /* Responsive improvements */
+  nav.primary{gap:8px}
+  nav.primary a{padding:10px 12px}
+  @media(max-width:900px){
+    .container{padding:0 12px}
+    .grid{grid-template-columns:1fr 300px}
+  }
+  @media(max-width:720px){
+    nav.primary{flex-wrap:wrap;justify-content:center}
+    .grid{grid-template-columns:1fr;padding:0}
+    .card{padding:14px}
+    .hero{padding:20px}
+    header.site-top h1{font-size:18px}
+  }
+  @media(max-width:420px){
+    nav.primary a{padding:8px 10px;font-size:14px}
+    .hero h2{font-size:18px}
+    .card{padding:12px}
+  }
+</style>
 </head>
 <body>
 <header><h1>BUENA HUELLA SAS GESTION</h1></header>
 <header style="background:#075; color:#fff;padding:12px 16px">
   <div style="max-width:1000px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px">
     <h1 style="margin:0;font-size:18px">BUENA HUELLA SAS GESTION</h1>
-    <nav style="display:flex;gap:12px;align-items:center">
-      <a href="index.html" style="color:#fff;text-decoration:none">Inicio</a>
-      <a href="clientes.html" style="color:#fff;text-decoration:none">Clientes</a>
-      <a href="productos.html" style="color:#fff;text-decoration:none">Productos</a>
-      <a href="presupuestos.html" style="color:#fff;text-decoration:none">Presupuestos</a>
-      <a href="proyectos.html" style="color:#fff;text-decoration:none">Proyectos</a>
-      <a href="proveedores.html" style="color:#fff;text-decoration:none">Proveedores</a>
-      <a href="operarios.html" style="color:#fff;text-decoration:none">Operarios</a>
+    <nav style="display:flex;gap:8px;align-items:center;font-weight:600">
+      <a href="index.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Inicio</a>
+      <a href="clientes.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Clientes</a>
+      <a href="productos.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Productos</a>
+      <a href="presupuestos.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Presupuestos</a>
+      <a href="proyectos.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Proyectos</a>
+      <a href="proveedores.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Proveedores</a>
+      <a href="operarios.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Operarios</a>
     </nav>
   </div>
 </header>
 
-<main>
-  <div style="max-width:1000px;margin:18px auto;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start">
-    <section style="background:#fff;padding:18px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06)">
-      <h2>Datos de la empresa</h2>
+<div class="hero">
+  <div class="container">
+    <h2>Mejorando la huella del humano en la tierra</h2>
+    <p class="lead">Tecnologías IOT, energía solar y soluciones para eficiencia productiva. Gestión desde el celular, paneles solares y almacenamiento de datos.</p>
+  </div>
+</div>
+
+<main class="container">
+  <div class="grid">
+    <section class="card">
+      <h3>Datos de la empresa</h3>
       <p><strong>Razón Social:</strong> Buena Huella S.A.S.<br>
       <strong>CUIT:</strong> 33-71652578-9<br>
       <strong>Domicilio:</strong> San Martín 409, Partido de Villarino, Buenos Aires<br>
       <strong>Responsable:</strong> Patricio Brizuela<br>
       <strong>Teléfono:</strong> +54 291 536-7751<br>
-      <strong>Email:</strong> buenahuellasas@gmail.com<br>
-      <strong>Web:</strong> www.buenahuella.com.ar</p>
+      <strong>Email:</strong> <a class="link" href="mailto:buenahuellasas@gmail.com">buenahuellasas@gmail.com</a><br>
+      <strong>Web:</strong> <a class="link" href="https://www.buenahuella.com.ar" target="_blank">www.buenahuella.com.ar</a></p>
 
-      <p>Accesos rápidos:
-        <a href="clientes.html">Clientes</a> ·
-        <a href="productos.html">Productos</a> ·
-        <a href="presupuestos.html">Presupuestos</a>
+      <p class="muted">Accesos rápidos:
+        <a class="link" href="clientes.html">Clientes</a> ·
+        <a class="link" href="productos.html">Productos</a> ·
+        <a class="link" href="presupuestos.html">Presupuestos</a>
       </p>
     </section>
 
-    <aside style="background:#fff;padding:16px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06)">
-      <h3>Tipo de cambio</h3>
+    <aside class="card">
+      <h4>Tipo de cambio</h4>
       <p>Dólar oficial (vendedor): <strong id="dolar">Cargando...</strong></p>
-      <p style="font-size:12px;color:#666">Última actualización: <span id="rate-time">-</span></p>
-      <p style="margin-top:12px"><a href="presupuestos.html">Crear presupuesto</a></p>
+      <p class="muted">Última actualización: <span id="rate-time">-</span></p>
+      <p style="margin-top:12px"><a class="link" href="presupuestos.html">Crear presupuesto</a></p>
     </aside>
   </div>
 </main>
