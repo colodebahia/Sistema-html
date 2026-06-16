@@ -1,10 +1,129 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📁 Proyecto Buena Huella - Documentación Completa</title>
-    <style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BUENA HUELLA SAS GESTION</title>
+  <style>
+    :root{--primary:#2d5a27;--bg:#f5f5f5;--card:#fff}
+    body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);margin:0}
+    header{background:var(--primary);color:#fff;padding:20px;text-align:center}
+    .wrap{max-width:1000px;margin:20px auto;padding:0 16px}
+    nav{background:#fff;padding:10px;border-radius:8px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+    nav a{color:var(--primary);text-decoration:none;padding:8px 12px;border-radius:6px;font-weight:600}
+    .card{background:var(--card);padding:16px;border-radius:8px;margin-top:16px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    .grid{display:grid;grid-template-columns:1fr 260px;gap:16px}
+    .small{font-size:14px;color:#333}
+    #dolar{font-weight:700;color:var(--primary)}
+    footer{text-align:center;color:#666;font-size:13px;margin:20px 0}
+    @media(max-width:800px){.grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BUENA HUELLA SAS GESTION</h1>
+  </header>
+  <div class="wrap">
+    <nav>
+      <a href="proyectos.html">Proyectos</a>
+      <a href="presupuestos.html">Presupuestos</a>
+      <a href="orden-de-compras.html">Orden de Compras</a>
+      <a href="proveedores.html">Proveedores</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="operarios.html">Operarios</a>
+    </nav>
+
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2>Datos de la empresa</h2>
+          <p class="small"><strong>Razón Social:</strong> Buena Huella S.A.S.<br>
+          <strong>CUIT:</strong> 33-71652578-9<br>
+          <strong>Domicilio:</strong> San Martín 409, Partido de Villarino, Buenos Aires<br>
+          <strong>Responsable:</strong> Patricio Brizuela<br>
+          <strong>Teléfono:</strong> +54 291 536-7751<br>
+          <strong>Email:</strong> buenahuellasas@gmail.com</p>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h2>Uso del Dólar Oficial</h2>
+          <p class="small">Dólar oficial (vendedor): <span id="dolar">Cargando...</span></p>
+          <p class="small">Última actualización: <span id="rate-time">-</span></p>
+          <p class="small">Ejemplo: 1 USD = <span id="dolar-valor">-</span> ARS</p>
+        </div>
+      </div>
+
+      <aside>
+        <div class="card">
+          <h3>Acciones rápidas</h3>
+          <p class="small"><a href="presupuestos.html">Crear presupuesto</a></p>
+          <p class="small"><a href="proyectos.html">Ver proyectos</a></p>
+          <p class="small"><a href="clientes.html">Lista de clientes</a></p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h2>Notas</h2>
+      <p class="small">El valor del dólar se obtiene desde la API pública (Bluelytics). Se usa el campo "oficial" → "value_sell" (vendedor).</p>
+    </div>
+  </div>
+
+  <footer>Buena Huella S.A.S. — Gestión · &copy; 2026</footer>
+
+  <script>
+    async function fetchDolar(){
+      const el = document.getElementById('dolar');
+      const valEl = document.getElementById('dolar-valor');
+      const timeEl = document.getElementById('rate-time');
+      try{
+        const res = await fetch('https://api.bluelytics.com.ar/v2/latest');
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        const oficial = data.oficial || data.oficial_euro || data.offical || data['dolar_oficial'];
+        const sell = (data.oficial && data.oficial.value_sell) ? data.oficial.value_sell : (data.oficial && data.oficial.value_sell) || (data.oficial && data.oficial.sell) || null;
+        const rate = sell || (data.oficial && data.oficial.value_sell) || (data.oficial && data.oficial.sell);
+        const timestamp = new Date().toLocaleString();
+        if(rate){
+          el.textContent = rate + ' ARS';
+          valEl.textContent = rate + ' ARS';
+          timeEl.textContent = timestamp;
+          localStorage.setItem('buena_dolar_oficial', JSON.stringify({rate:rate,at:timestamp}));
+        } else {
+          throw new Error('Rate not found');
+        }
+      }catch(err){
+        const saved = localStorage.getItem('buena_dolar_oficial');
+        if(saved){
+          const obj = JSON.parse(saved);
+          el.textContent = obj.rate + ' ARS (cached)';
+          valEl.textContent = obj.rate + ' ARS';
+          timeEl.textContent = obj.at + ' (cached)';
+        } else {
+          el.textContent = 'No disponible';
+          valEl.textContent = '-';
+          timeEl.textContent = '-';
+        }
+        console.warn('Error fetching dolar:', err);
+      }
+    }
+    // fetch on load
+    fetchDolar();
+    // refresh every 10 minutes
+    setInterval(fetchDolar, 10*60*1000);
+
+    // helper to convert USD to ARS using latest rate
+    function usdToArs(usd){
+      const saved = localStorage.getItem('buena_dolar_oficial');
+      if(!saved) return null;
+      const rate = JSON.parse(saved).rate;
+      return (Number(usd) * Number(rate)).toFixed(2);
+    }
+    window.usdToArs = usdToArs;
+  </script>
+</body>
+</html>
+
         :root {
             --primary: #2d5a27;
             --primary-light: #e8f5e9;

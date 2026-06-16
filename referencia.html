@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📁 Proyecto Buena Huella - Documentación Completa</title>
+    <style>
+        :root {
+            --primary: #2d5a27;
+            --primary-light: #e8f5e9;
+            --secondary: #f57f17;
+            --text: #1a1a1a;
+            --text-light: #666;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--bg);
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        
+        /* HEADER */
+        header {
+            background: var(--primary);
+            color: var(--white);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        header h1 { font-size: 24px; margin-bottom: 10px; }
+        header p { opacity: 0.9; font-size: 14px; }
+        
+        /* NAV */
+        nav {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+        }
+        nav ul { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        nav a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 15px;
+            background: var(--primary-light);
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+        nav a:hover { background: var(--primary); color: var(--white); }
+        
+        /* SECTIONS */
+        section {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        section h2 {
+            color: var(--primary);
+            font-size: 18px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        section h3 {
+            color: var(--text);
+            font-size: 15px;
+            margin: 20px 0 10px;
+        }
+        
+        /* COLLAPSIBLE */
+        details {
+            background: var(--primary-light);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        summary {
+            font-weight: 700;
+            color: var(--primary);
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        summary::before { content: "▶"; font-size: 12px; transition: transform 0.2s; }
+        details[open] summary::before { transform: rotate(90deg); }
+        
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+        th {
+            background: var(--primary);
+            color: var(--white);
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:nth-child(even) { background: #fafafa; }
+        
+        /* CODE BLOCKS */
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        code { font-family: 'Courier New', monospace; }
+        
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin: 2px;
+        }
+        .badge-green { background: #4caf50; color: white; }
+        .badge-orange { background: var(--secondary); color: white; }
+        .badge-blue { background: #2196f3; color: white; }
+        
+        /* PRICING */
+        .price-card {
+            background: linear-gradient(135deg, var(--primary) 0%, #3d7a37 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .price-card h4 { margin-bottom: 10px; }
+        .price-card .amount { font-size: 28px; font-weight: 700; }
+        .price-card .note { font-size: 12px; opacity: 0.9; margin-top: 5px; }
+        
+        /* CHECKLIST */
+        .checklist { list-style: none; }
+        .checklist li {
+            padding: 8px 0 8px 30px;
+            position: relative;
+        }
+        .checklist li::before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+        }
+        
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-light);
+            font-size: 12px;
+        }
+        
+        /* PRINT */
+        @media print {
+            body { background: white; }
+            nav { display: none; }
+            section { box-shadow: none; border: 1px solid #eee; }
+            details { background: white; border: 1px solid #ddd; }
+        }
+        @media (max-width: 600px) {
+            nav ul { flex-direction: column; }
+            .container { padding: 10px; }
+            section { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header>
+            <h1>📁 PROYECTO BUENA HUELLA</h1>
+            <p>Dosificador IOT + Taninos Antiempaste + Acción Antiparasitaria</p>
+            <p style="margin-top:10px; font-size:12px; opacity:0.8;">
+                Última actualización: 19 de mayo de 2026 | Versión 1.0
+            </p>
+        </header>
+
+        <!-- NAV -->
+        <nav>
+            <ul>
+                <li><a href="#empresa">🏢 Empresa</a></li>
+                <li><a href="#productos">📦 Productos</a></li>
+                <li><a href="#precios">💰 Precios</a></li>
+                <li><a href="#plantillas">📋 Plantillas</a></li>
+                <li><a href="#procesos">⚙️ Procesos</a></li>
+                <li><a href="#clientes">👥 Clientes</a></li>
+                <li><a href="#recursos">🔗 Recursos</a></li>
+            </ul>
+        </nav>
+
+        <!-- EMPRESA -->
+        <section id="empresa">
+            <h2>🏢 Información de la Empresa</h2>
+            <table>
+                <tr><th>Dato</th><th>Valor</th></tr>
+                <tr><td>Razón Social</td><td>Buena Huella S.A.S.</td></tr>
+                <tr><td>CUIT</td><td>33-71652578-9</td></tr>
+                <tr><td>Domicilio</td><td>San Martín 409, Partido de Villarino, Buenos Aires</td></tr>
+                <tr><td>Responsable</td><td>Patricio Brizuela</td></tr>
+                <tr><td>Teléfono</td><td>+54 291 536-7751</td></tr>
+                <tr><td>Email</td><td>buenahuellasas@gmail.com</td></tr>
+                <tr><td>Web</td><td>www.buenahuella.com.ar</td></tr>
+                <tr><td>Alias Bancario</td><td>buena.huella.sas</td></tr>
+                <tr><td>Condición IVA</td><td>Responsable Inscripto</td></tr>
+            </table>
+            <p style="margin-top:15px; font-size:13px; color:var(--text-light);">
+                <strong>Misión:</strong> Habilitar el pastoreo de alfalfa sin riesgos. Más peso, menos estrés, campo sostenible.
+            </p>
+        </section>
+
+        <!-- PRODUCTOS -->
+        <section id="productos">
+            <h2>📦 Productos y Servicios</h2>
+            
+            <details open>
+                <summary>🔋 Dosificador IOT Básico</summary>
+                <p style="margin-top:10px; font-size:13px;">
+                    <strong>Descripción comercial:</strong> Dosificador IOT programable por celular, autónomo, con baterías de litio y panel solar, portátil para bidón de 20 litros.
+                </p>
+                <p style="margin-top:8px; font-size:13px;">
+                    <strong>Características técnicas:</strong>
+                    <ul style="margin-left:20px; margin-top:5px; font-size:12px;">
+                        <li>Configuración WiFi local desde smartphone</li>
+                        <li>Dosificación inteligente según tamaño de bebedero</li>
+                        <li>Autonomía: 3-5 días sin sol (baterías de litio)</li>
+                        <li>Panel solar 10-20W con regulador de carga</li>
+                        <li>Estructura metálica resistente a campo</li>
+                        <li>Mangueras, conectores y accesorios incluidos</li>
+                    </ul>
+                </p>
+                <p style="margin-top:8px; font-size:12px; color:var(--text-light);">
+                    <strong>Mano de obra incluida:</strong> 8h de armado, configuración y prueba técnica.
+                </p>
+            </details>
+
+... (truncated for brevity) ...
