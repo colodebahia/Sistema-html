@@ -1,8 +1,292 @@
 <!doctype html>
 <html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Clientes - Buena Huella</title></head>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Clientes - Buena Huella</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-sA+qg3kQf+gS3p0u3E2kqKkR5m0b2b3l1bM6b6s5Q3s=" crossorigin=""/>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f5f5f5}
+    header{background:#2d5a27;color:#fff;padding:14px;text-align:center}
+    .wrap{max-width:1100px;margin:16px auto;padding:12px}
+    .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06);}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+    input,select,textarea{padding:8px;border:1px solid #ddd;border-radius:6px;width:100%}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:12px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+    .actions button{margin-right:6px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+    .small{font-size:13px;color:#444}
+    .btn{background:#2d5a27;color:#fff;padding:8px 10px;border-radius:6px;border:none;cursor:pointer}
+    .btn.secondary{background:#eee;color:#333}
+    #map{height:320px;border-radius:8px;margin-top:8px}
+    .kml-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  </style>
+</head>
 <body>
-  <h1>Clientes</h1>
-  <p>Página placeholder. Volver a <a href="index.html">inicio</a>.</p>
+  <header><h1>Clientes — Buena Huella</h1></header>
+  <div class="wrap">
+    <div class="card">
+      <div class="toolbar">
+        <input id="search" placeholder="Buscar por nombre, teléfono o email" />
+        <button class="btn" id="newBtn">+ Nuevo cliente</button>
+        <button class="btn secondary" id="exportBtn">Exportar JSON</button>
+        <button class="btn secondary" id="importBtn">Importar JSON</button>
+      </div>
+      <div class="grid">
+        <div>
+          <table id="clientsTable">
+            <thead><tr><th>Nombre</th><th>Teléfono</th><th>Email</th><th>Ubicación</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+
+          <div class="card" style="margin-top:12px">
+            <h3>Mapa</h3>
+            <div id="map"></div>
+            <div class="kml-actions">
+              <input type="file" id="kmlFile" accept=".kml" style="display:none" />
+              <button class="btn secondary" id="importKmlBtn">Importar KML</button>
+              <button class="btn secondary" id="exportKmlBtn">Exportar KML (cliente seleccionado)</button>
+              <button class="btn secondary" id="exportAllKmlBtn">Exportar KML (todos)</button>
+            </div>
+          </div>
+        </div>
+        <aside>
+          <div class="card">
+            <h3>Formulario</h3>
+            <form id="clientForm">
+              <input type="hidden" id="clientId" />
+              <label class="small">Nombre</label>
+              <input id="name" required />
+              <label class="small">Teléfono</label>
+              <input id="phone" />
+              <label class="small">Email</label>
+              <input id="email" />
+              <label class="small">Ubicación</label>
+              <input id="location" />
+              <label class="small">Notas</label>
+              <textarea id="notes" rows="4"></textarea>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button class="btn" type="submit">Guardar</button>
+                <button type="button" class="btn secondary" id="cancelBtn">Cancelar</button>
+              </div>
+              <p class="small" style="margin-top:8px">Si importas un KML, selecciona un cliente (Editar) antes de importar para asociar la geometría.</p>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <p style="margin-top:10px" class="small">Volver al <a href="index.html">inicio</a></p>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-o9N1j7kG7QY0z8gGk3mXb0xR6/6b6s5Q3s2k1gGk3Hk=" crossorigin=""></script>
+  <script src="https://unpkg.com/togeojson@0.16.0/dist/togeojson.js"></script>
+  <script>
+    // Storage and basic CRUD
+    const STORAGE_KEY = 'buena_clients_v1';
+    function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+    function readClients(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return[]}}
+    function saveClients(list){localStorage.setItem(STORAGE_KEY,JSON.stringify(list))}
+
+    // DOM refs
+    const tableBody = document.querySelector('#clientsTable tbody');
+    const form = document.getElementById('clientForm');
+    const newBtn = document.getElementById('newBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const search = document.getElementById('search');
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    const importKmlBtn = document.getElementById('importKmlBtn');
+    const kmlFile = document.getElementById('kmlFile');
+    const exportKmlBtn = document.getElementById('exportKmlBtn');
+    const exportAllKmlBtn = document.getElementById('exportAllKmlBtn');
+
+    // Leaflet map
+    const map = L.map('map',{zoomControl:true}).setView([-38, -62],4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
+    const geoLayer = L.layerGroup().addTo(map);
+
+    function render(filter){
+      const q = (filter||'').toLowerCase();
+      const clients = readClients().filter(c=>{
+        if(!q) return true;
+        return (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q)
+      });
+      tableBody.innerHTML = '';
+      geoLayer.clearLayers();
+      for(const c of clients){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.phone||'')}</td><td>${escapeHtml(c.email||'')}</td><td>${escapeHtml(c.location||'')}</td><td class="actions"><button data-id="${c.id}" class="btn secondary edit">Editar</button><button data-id="${c.id}" class="btn secondary del">Borrar</button></td>`;
+        tableBody.appendChild(tr);
+        // render geometry if exists
+        if(c.geometry){
+          try{
+            const gj = c.geometry; // GeoJSON
+            const layer = L.geoJSON(gj,{style:{color:'#2d5a27',weight:2,opacity:0.8},pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:6,fillColor:'#2d5a27',color:'#fff',weight:1,opacity:1,fillOpacity:0.9})});
+            layer.bindPopup(`<strong>${escapeHtml(c.name||'')}</strong><br>${escapeHtml(c.location||'')}`);
+            layer.addTo(geoLayer);
+          }catch(e){console.warn('Invalid geometry for client',c.id)}
+        }
+      }
+      // fit map to layers
+      const all = geoLayer.getLayers();
+      if(all.length){
+        const group = L.featureGroup(all);
+        map.fitBounds(group.getBounds().pad(0.2));
+      }
+    }
+
+    function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    tableBody.addEventListener('click',e=>{
+      const id = e.target.getAttribute('data-id');
+      if(e.target.classList.contains('edit')){openEdit(id)}
+      if(e.target.classList.contains('del')){if(confirm('Borrar cliente?')){deleteClient(id)}}
+    })
+
+    function openEdit(id){
+      const clients = readClients();
+      const c = clients.find(x=>x.id===id);
+      if(!c) return;
+      document.getElementById('clientId').value = c.id;
+      document.getElementById('name').value = c.name||'';
+      document.getElementById('phone').value = c.phone||'';
+      document.getElementById('email').value = c.email||'';
+      document.getElementById('location').value = c.location||'';
+      document.getElementById('notes').value = c.notes||'';
+      // zoom to geometry if present
+      if(c.geometry){
+        try{ const layer = L.geoJSON(c.geometry); map.fitBounds(layer.getBounds().pad(0.2)); }catch(e){}
+      }
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function deleteClient(id){
+      const list = readClients().filter(x=>x.id!==id);
+      saveClients(list); render(search.value);
+    }
+
+    form.addEventListener('submit',e=>{
+      e.preventDefault();
+      const id = document.getElementById('clientId').value || uid();
+      const client = { id, name:document.getElementById('name').value.trim(), phone:document.getElementById('phone').value.trim(), email:document.getElementById('email').value.trim(), location:document.getElementById('location').value.trim(), notes:document.getElementById('notes').value.trim(), geometry:null };
+      // preserve existing geometry if editing
+      const existing = readClients().find(x=>x.id===id);
+      if(existing && existing.geometry) client.geometry = existing.geometry;
+      const list = readClients().filter(x=>x.id!==id).concat([client]);
+      saveClients(list);
+      form.reset(); document.getElementById('clientId').value=''; render();
+    })
+
+    newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('clientId').value=''; window.scrollTo({top:0,behavior:'smooth'})})
+    cancelBtn.addEventListener('click',()=>{form.reset(); document.getElementById('clientId').value='';})
+    search.addEventListener('input',e=>render(e.target.value))
+
+    exportBtn.addEventListener('click',()=>{
+      const data = localStorage.getItem(STORAGE_KEY) || '[]';
+      const blob = new Blob([data],{type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='clientes.json'; a.click(); URL.revokeObjectURL(url);
+    })
+
+    importBtn.addEventListener('click',async ()=>{
+      const text = prompt('Pega aquí el JSON de clientes o cancela');
+      if(!text) return; try{ const parsed = JSON.parse(text); if(Array.isArray(parsed)){ saveClients(parsed); render(); alert('Importado'); } else alert('JSON inválido, se espera un array'); }catch(e){alert('JSON inválido')}
+    })
+
+    // KML import/export
+    importKmlBtn.addEventListener('click',()=>kmlFile.click());
+    kmlFile.addEventListener('change',async (evt)=>{
+      const f = evt.target.files[0]; if(!f) return; const text = await f.text();
+      try{
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text,'text/xml');
+        const gj = toGeoJSON.kml(doc);
+        // if client selected, attach geometry; else create new client per feature
+        const selId = document.getElementById('clientId').value;
+        if(selId){
+          // attach full feature collection as geometry
+          const clients = readClients();
+          const idx = clients.findIndex(x=>x.id===selId);
+          if(idx!==-1){ clients[idx].geometry = gj; saveClients(clients); render(); alert('KML importado y asociado al cliente.'); return }
+        }
+        // create clients for each Placemark with name
+        const list = readClients();
+        for(const feat of gj.features){
+          const name = (feat.properties && (feat.properties.name||feat.properties.Name)) || 'Sin nombre';
+          const newClient = { id:uid(), name:name, phone:'', email:'', location:'', notes:'Importado KML', geometry:{type:'FeatureCollection',features:[feat]} };
+          list.push(newClient);
+        }
+        saveClients(list); render(); alert('KML importado: '+gj.features.length+' placemarks añadidos.');
+      }catch(e){console.error(e); alert('Error al parsear KML')}
+      finally{ kmlFile.value=''}
+    })
+
+    function geojsonToKml(featureCollection){
+      // simple KML generator for FeatureCollection with Points and Polygons
+      const esc = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      let kml = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document>`;
+      for(const f of (featureCollection.type==='FeatureCollection'?featureCollection.features:[featureCollection])){
+        const name = esc((f.properties && (f.properties.name||f.properties.Name)) || '');
+        kml += `<Placemark><name>${name}</name>`;
+        const g = f.geometry;
+        if(!g){ kml += '</Placemark>'; continue }
+        if(g.type==='Point'){
+          const [lon,lat] = g.coordinates; kml += `<Point><coordinates>${lon},${lat},0</coordinates></Point>`;
+        } else if(g.type==='Polygon'){
+          kml += '<Polygon><outerBoundaryIs><LinearRing><coordinates>';
+          const coords = g.coordinates[0];
+          kml += coords.map(c=>`${c[0]},${c[1]},0`).join(' ');
+          kml += '</coordinates></LinearRing></outerBoundaryIs></Polygon>';
+        } else if(g.type==='MultiPolygon'){
+          for(const poly of g.coordinates){ kml += '<Polygon><outerBoundaryIs><LinearRing><coordinates>'; kml += poly[0].map(c=>`${c[0]},${c[1]},0`).join(' '); kml += '</coordinates></LinearRing></outerBoundaryIs></Polygon>' }
+        } else if(g.type==='MultiPoint'){
+          for(const p of g.coordinates){ kml += `<Point><coordinates>${p[0]},${p[1]},0</coordinates></Point>` }
+        } else {
+          // fallback: try to write geometry as coordinates if possible
+        }
+        kml += '</Placemark>';
+      }
+      kml += '</Document></kml>';
+      return kml;
+    }
+
+    exportKmlBtn.addEventListener('click',()=>{
+      const selId = document.getElementById('clientId').value;
+      if(!selId){ alert('Selecciona un cliente (Editar) para exportar su KML.'); return }
+      const c = readClients().find(x=>x.id===selId);
+      if(!c || !c.geometry){ alert('Cliente no tiene geometría asociada.'); return }
+      const kml = geojsonToKml(c.geometry.type==='FeatureCollection'?c.geometry:{type:'FeatureCollection',features:[c.geometry]});
+      const blob = new Blob([kml],{type:'application/vnd.google-earth.kml+xml'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (c.name||'cliente')+'.kml'; a.click(); URL.revokeObjectURL(a.href);
+    })
+
+    exportAllKmlBtn.addEventListener('click',()=>{
+      const clients = readClients().filter(c=>c.geometry);
+      if(!clients.length){ alert('No hay geometrías para exportar.'); return }
+      // create single FeatureCollection merging client features
+      const features = [];
+      for(const c of clients){
+        if(c.geometry && c.geometry.type==='FeatureCollection'){
+          for(const f of c.geometry.features){ if(f) features.push(f) }
+        } else if(c.geometry && c.geometry.type){ features.push(c.geometry) }
+      }
+      const fc = {type:'FeatureCollection',features:features};
+      const kml = geojsonToKml(fc);
+      const blob = new Blob([kml],{type:'application/vnd.google-earth.kml+xml'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'clientes_geometrias.kml'; a.click(); URL.revokeObjectURL(a.href);
+    })
+
+    // init sample data if empty
+    if(!localStorage.getItem(STORAGE_KEY)){
+      const sample = [{id:uid(),name:'Cristian Acuña',phone:'+54 291 418-3874',email:'cristian@example.com',location:'Pedro Luro',notes:'Cliente ejemplo',geometry:null}];
+      saveClients(sample);
+    }
+
+    render();
+    // expose for console
+    window._buena = {readClients,saveClients,render};
+  </script>
 </body>
 </html>
