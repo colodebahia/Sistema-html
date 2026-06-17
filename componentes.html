@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Componentes - Buena Huella</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f5f5f5}
+    header{background:#2d5a27;color:#fff;padding:14px;text-align:center}
+    .wrap{max-width:1100px;margin:16px auto;padding:12px}
+    .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06);}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+    input,select,textarea{padding:8px;border:1px solid #ddd;border-radius:6px;width:100%;box-sizing:border-box}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:12px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+    .actions button{margin-right:6px;font-size:12px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+    .small{font-size:13px;color:#666}
+    .label{font-size:13px;color:#333;margin-top:8px;display:block}
+    .btn{background:#2d5a27;color:#fff;padding:8px 10px;border-radius:6px;border:none;cursor:pointer;font-size:13px}
+    .btn.secondary{background:#eee;color:#333}
+    .btn:hover{background:#1e4620}
+    .btn.secondary:hover{background:#ddd}
+    .two-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    @media(max-width:600px){.two-cols{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header><h1>Componentes — Buena Huella</h1></header>
+  <div class="wrap">
+    <div class="card">
+      <div class="toolbar">
+        <input id="search" placeholder="Buscar por SKU, nombre o proveedor" />
+        <button class="btn" id="newBtn">+ Nuevo componente</button>
+        <button class="btn secondary" id="exportBtn">Exportar JSON</button>
+        <button class="btn secondary" id="importBtn">Importar JSON</button>
+        <button class="btn secondary" id="exportCsvBtn">Exportar CSV</button>
+      </div>
+      <div class="grid">
+        <div style="overflow-x:auto">
+          <table id="componentsTable">
+            <thead><tr><th>SKU</th><th>Nombre</th><th>Precio USD</th><th>Precio ARS</th><th>Proveedor</th><th>Lead Time</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <aside>
+          <div class="card">
+            <h3>Formulario</h3>
+            <form id="componentForm">
+              <input type="hidden" id="componentId" />
+              <label class="label">SKU *</label>
+              <input id="sku" required />
+              <label class="label">Nombre *</label>
+              <input id="name" required />
+              <label class="label">Descripción</label>
+              <textarea id="description" rows="3"></textarea>
+              <label class="label">Proveedor</label>
+              <input id="supplier" />
+              <div class="two-cols">
+                <div>
+                  <label class="label">Precio USD</label>
+                  <input id="priceUsd" type="number" step="0.01" />
+                </div>
+                <div>
+                  <label class="label">Precio ARS</label>
+                  <input id="priceArs" type="number" step="0.01" />
+                </div>
+              </div>
+              <div class="two-cols">
+                <div>
+                  <label class="label">Lead Time (días)</label>
+                  <input id="leadTime" type="number" step="1" value="0" />
+                </div>
+                <div>
+                  <label class="label">Stock actual</label>
+                  <input id="stock" type="number" step="1" value="0" />
+                </div>
+              </div>
+              <label class="label">Notas</label>
+              <textarea id="notes" rows="2"></textarea>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button class="btn" type="submit">Guardar</button>
+                <button type="button" class="btn secondary" id="cancelBtn">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <p style="margin-top:10px" class="small">Volver al <a href="index.html">inicio</a></p>
+  </div>
+
+  <script>
+    // Storage and CRUD
+    const STORAGE_KEY = 'buena_components_v1';
+    function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+    function readComponents(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return[]}}
+    function saveComponents(list){localStorage.setItem(STORAGE_KEY,JSON.stringify(list))}
+
+    // DOM refs
+    const tableBody = document.querySelector('#componentsTable tbody');
+    const form = document.getElementById('componentForm');
+    const newBtn = document.getElementById('newBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const search = document.getElementById('search');
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+    function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    function escapeCsv(s){const str = String(s||''); return /[,"\n\r]/.test(str) ? '"'+str.replace(/"/g,'""')+'"' : str}
+
+    function render(filter){
+      const q = (filter||'').toLowerCase();
+      const components = readComponents().filter(c=>{
+        if(!q) return true;
+        return (c.name||'').toLowerCase().includes(q) || (c.sku||'').toLowerCase().includes(q) || (c.supplier||'').toLowerCase().includes(q)
+      });
+      tableBody.innerHTML = '';
+      for(const c of components){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><strong>${escapeHtml(c.sku||'')}</strong></td><td>${escapeHtml(c.name||'')}</td><td>${(c.priceUsd||0).toFixed(2)}</td><td>${(c.priceArs||0).toFixed(2)}</td><td>${escapeHtml(c.supplier||'')}</td><td>${c.leadTime||0}</td><td class="actions"><button data-id="${c.id}" class="btn secondary edit">Editar</button><button data-id="${c.id}" class="btn secondary del">Borrar</button></td>`;
+        tableBody.appendChild(tr);
+      }
+    }
+
+    tableBody.addEventListener('click',e=>{
+      const id = e.target.getAttribute('data-id');
+      if(e.target.classList.contains('edit')){openEdit(id)}
+      if(e.target.classList.contains('del')){if(confirm('¿Borrar componente?')){deleteComponent(id)}}
+    })
+
+    function openEdit(id){
+      const components = readComponents();
+      const c = components.find(x=>x.id===id);
+      if(!c) return;
+      document.getElementById('componentId').value = c.id;
+      document.getElementById('sku').value = c.sku||'';
+      document.getElementById('name').value = c.name||'';
+      document.getElementById('description').value = c.description||'';
+      document.getElementById('supplier').value = c.supplier||'';
+      document.getElementById('priceUsd').value = c.priceUsd||0;
+      document.getElementById('priceArs').value = c.priceArs||0;
+      document.getElementById('leadTime').value = c.leadTime||0;
+      document.getElementById('stock').value = c.stock||0;
+      document.getElementById('notes').value = c.notes||'';
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function deleteComponent(id){
+      const list = readComponents().filter(x=>x.id!==id);
+      saveComponents(list); render(search.value);
+    }
+
+    form.addEventListener('submit',e=>{
+      e.preventDefault();
+      const id = document.getElementById('componentId').value || uid();
+      const component = {
+        id,
+        sku:document.getElementById('sku').value.trim(),
+        name:document.getElementById('name').value.trim(),
+        description:document.getElementById('description').value.trim(),
+        supplier:document.getElementById('supplier').value.trim(),
+        priceUsd:parseFloat(document.getElementById('priceUsd').value)||0,
+        priceArs:parseFloat(document.getElementById('priceArs').value)||0,
+        leadTime:parseInt(document.getElementById('leadTime').value)||0,
+        stock:parseInt(document.getElementById('stock').value)||0,
+        notes:document.getElementById('notes').value.trim(),
+        createdAt:new Date().toISOString()
+      };
+      const existing = readComponents().find(x=>x.id===id);
+      if(existing) component.createdAt = existing.createdAt;
+      const list = readComponents().filter(x=>x.id!==id).concat([component]);
+      saveComponents(list);
+      form.reset(); document.getElementById('componentId').value=''; render();
+      alert('Componente guardado');
+    })
+
+    newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('componentId').value=''; window.scrollTo({top:0,behavior:'smooth'})})
+    cancelBtn.addEventListener('click',()=>{form.reset(); document.getElementById('componentId').value='';})
+    search.addEventListener('input',e=>render(e.target.value))
+
+    exportBtn.addEventListener('click',()=>{
+      const data = localStorage.getItem(STORAGE_KEY) || '[]';
+      const blob = new Blob([data],{type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='componentes.json'; a.click(); URL.revokeObjectURL(url);
+    })
+
+    importBtn.addEventListener('click',async ()=>{
+      const text = prompt('Pega aquí el JSON de componentes o cancela');
+      if(!text) return;
+      try{
+        const parsed = JSON.parse(text);
+        if(Array.isArray(parsed)){
+          saveComponents(parsed); render(); alert('Importado: '+parsed.length+' componentes');
+        } else alert('JSON inválido, se espera un array');
+      }catch(e){alert('JSON inválido')}
+    })
+
+    exportCsvBtn.addEventListener('click',()=>{
+      const components = readComponents();
+      let csv = 'SKU,Nombre,Descripción,Proveedor,Precio USD,Precio ARS,Lead Time (días),Stock,Notas\n';
+      for(const c of components){
+        csv += [escapeCsv(c.sku),escapeCsv(c.name),escapeCsv(c.description),escapeCsv(c.supplier),c.priceUsd,c.priceArs,c.leadTime,c.stock,escapeCsv(c.notes)].join(',')+'\n';
+      }
+      const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='componentes.csv'; a.click(); URL.revokeObjectURL(url);
+    })
+
+    // init sample data if empty
+    if(!localStorage.getItem(STORAGE_KEY)){
+      const sample = [
+        {id:uid(),sku:'CMP-001',name:'Plaqueta Controlador',description:'PCB ensamblada con firmware',supplier:'Buena Huella (Interna)',priceUsd:15,priceArs:3200,leadTime:0,stock:20,notes:'Producción interna',createdAt:new Date().toISOString()},
+        {id:uid(),sku:'CMP-002',name:'Gabinete ABS 3D',description:'Gabinete impreso en ABS color negro',supplier:'Buena Huella (Interna)',priceUsd:8,priceArs:1700,leadTime:0,stock:15,notes:'Fabricación propia',createdAt:new Date().toISOString()},
+        {id:uid(),sku:'CMP-003',name:'Tornillo M3 Inox',description:'Tornillo acero inoxidable 15mm',supplier:'Proveedor Local',priceUsd:0.05,priceArs:11,leadTime:3,stock:500,notes:'Compras a granel',createdAt:new Date().toISOString()},
+        {id:uid(),sku:'CMP-004',name:'Sensor Ultrasónico',description:'HC-SR04 o similar para nivel',supplier:'Distribuidor Electrónica',priceUsd:2.5,priceArs:550,leadTime:7,stock:30,notes:'Importación',createdAt:new Date().toISOString()}
+      ];
+      saveComponents(sample);
+    }
+
+    render();
+    window._buena = {readComponents,saveComponents,render};
+  </script>
+</body>
+</html>
