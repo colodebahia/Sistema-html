@@ -40,9 +40,16 @@
       <div class="grid">
         <div>
           <table id="productsTable">
-            <thead><tr><th>SKU</th><th>Nombre</th><th>Precio USD</th><th>Precio ARS</th><th>Stock</th><th></th></tr></thead>
+            <thead><tr><th>SKU</th><th>Nombre</th><th>Precio USD</th><th>Precio ARS</th><th>Stock</th><th>Soporte</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
+          <div id="resourcesModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999;padding:20px;overflow-y:auto">
+            <div style="background:#fff;max-width:600px;margin:40px auto;border-radius:8px;padding:20px">
+              <h3 id="modalTitle">Recursos Técnicos</h3>
+              <div id="modalResources" style="border:1px solid #ddd;border-radius:4px;padding:12px;margin:12px 0"></div>
+              <button class="btn secondary" id="closeModalBtn" style="width:100%">Cerrar</button>
+            </div>
+          </div>
         </div>
         <aside>
           <div class="card">
@@ -79,6 +86,17 @@
               </div>
               <label class="label">Componentes (JSON)</label>
               <textarea id="components" rows="3" placeholder='[{"sku":"CMP-001","qty":1}]'></textarea>
+              <label class="label">Información Técnica</label>
+              <div id="techResourcesList" style="max-height:150px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:8px;margin-bottom:8px"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+                <select id="resourceType">
+                  <option value="web">Enlace Web</option>
+                  <option value="local">Archivo Local</option>
+                  <option value="youtube">YouTube</option>
+                </select>
+                <input id="resourceUrl" placeholder="URL o ruta local" style="font-size:12px" />
+              </div>
+              <button type="button" class="btn secondary" id="addResourceBtn" style="width:100%;margin-bottom:8px">+ Agregar Recurso</button>
               <div style="margin-top:8px;display:flex;gap:8px">
                 <button class="btn" type="submit">Guardar</button>
                 <button type="button" class="btn secondary" id="cancelBtn">Cancelar</button>
@@ -106,6 +124,72 @@
     const search = document.getElementById('search');
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
+    const addResourceBtn = document.getElementById('addResourceBtn');
+    const resourceType = document.getElementById('resourceType');
+    const resourceUrl = document.getElementById('resourceUrl');
+    const techResourcesList = document.getElementById('techResourcesList');
+    const resourcesModal = document.getElementById('resourcesModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalResources = document.getElementById('modalResources');
+
+    // Technical resources state
+    let currentTechResources = [];
+
+    function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+    function renderTechResources(){
+      techResourcesList.innerHTML = '';
+      for(let i = 0; i < currentTechResources.length; i++){
+        const res = currentTechResources[i];
+        const type = res.type === 'web' ? '🌐' : res.type === 'local' ? '📄' : '🎥';
+        const item = document.createElement('div');
+        item.style.cssText = 'padding:6px;border-bottom:1px solid #eee;font-size:12px;display:flex;justify-content:space-between;align-items:center';
+        const link = res.type === 'local' ? res.url.split('\\').pop() : res.url.substring(0, 40);
+        item.innerHTML = `<span>${type} ${escapeHtml(link)}</span><button type="button" data-idx="${i}" class="btn secondary" style="padding:4px 6px;font-size:11px">Quitar</button>`;
+        item.querySelector('button').addEventListener('click',e=>{
+          currentTechResources.splice(parseInt(e.target.getAttribute('data-idx')), 1);
+          renderTechResources();
+        });
+        techResourcesList.appendChild(item);
+      }
+    }
+
+    function showResources(productName, resources){
+      modalTitle.textContent = 'Soporte: '+productName;
+      modalResources.innerHTML = '';
+      if(!resources.length){
+        modalResources.innerHTML = '<p style="color:#999">Sin recursos técnicos</p>';
+      } else {
+        for(const res of resources){
+          const div = document.createElement('div');
+          div.style.cssText = 'padding:10px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:8px';
+          const typeLabel = res.type === 'web' ? '🌐 Web' : res.type === 'local' ? '📄 Local' : '🎥 YouTube';
+          const displayUrl = res.type === 'local' ? res.url.split('\\').pop() : res.url.length > 50 ? res.url.substring(0,47)+'...' : res.url;
+          const link = res.type === 'local' ? `<code style="background:#f5f5f5;padding:4px;border-radius:3px;font-size:11px">${escapeHtml(displayUrl)}</code>` : `<a href="${escapeHtml(res.url)}" target="_blank" style="color:#2d5a27;text-decoration:none">${escapeHtml(displayUrl)}</a>`;
+          div.innerHTML = `<strong>${typeLabel}</strong> ${link}`;
+          modalResources.appendChild(div);
+        }
+      }
+      resourcesModal.style.display = 'block';
+    }
+
+    addResourceBtn.addEventListener('click',()=>{
+      const url = resourceUrl.value.trim();
+      const type = resourceType.value;
+      if(!url){ alert('Ingresa URL o ruta'); return }
+      currentTechResources.push({type, url});
+      resourceUrl.value = '';
+      renderTechResources();
+    })
+
+    closeModalBtn.addEventListener('click',()=>{
+      resourcesModal.style.display = 'none';
+    })
+
+    resourcesModal.addEventListener('click',e=>{
+      if(e.target === resourcesModal) resourcesModal.style.display = 'none';
+    })
 
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
@@ -118,9 +202,20 @@
       tableBody.innerHTML = '';
       for(const p of products){
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.name||'')}</td><td>${(p.priceUsd||0).toFixed(2)}</td><td>${(p.priceArs||0).toFixed(2)}</td><td>${p.stock||0}</td><td class="actions"><button data-id="${p.id}" class="btn secondary edit">Editar</button><button data-id="${p.id}" class="btn secondary del">Borrar</button></td>`;
+        const techCount = (p.technicalInfo || []).length;
+        const techBtn = techCount > 0 ? `<button type="button" data-sku="${p.sku}" data-name="${p.name}" class="btn secondary view-resources" style="font-size:12px">📚 ${techCount}</button>` : '—';
+        tr.innerHTML = `<td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.name||'')}</td><td>${(p.priceUsd||0).toFixed(2)}</td><td>${(p.priceArs||0).toFixed(2)}</td><td>${p.stock||0}</td><td>${techBtn}</td><td class="actions"><button data-id="${p.id}" class="btn secondary edit">Editar</button><button data-id="${p.id}" class="btn secondary del">Borrar</button></td>`;
         tableBody.appendChild(tr);
       }
+      // Attach event listeners to resource buttons
+      document.querySelectorAll('.view-resources').forEach(btn=>{
+        btn.addEventListener('click',e=>{
+          const sku = e.target.getAttribute('data-sku');
+          const name = e.target.getAttribute('data-name');
+          const p = readProducts().find(x=>x.sku===sku);
+          if(p) showResources(name, p.technicalInfo || []);
+        })
+      })
     }
 
     tableBody.addEventListener('click',e=>{
@@ -143,6 +238,8 @@
       document.getElementById('stock').value = p.stock||0;
       document.getElementById('leadTime').value = p.leadTime||0;
       document.getElementById('components').value = p.components ? JSON.stringify(p.components,null,2) : '[]';
+      currentTechResources = p.technicalInfo ? [...p.technicalInfo] : [];
+      renderTechResources();
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
@@ -173,6 +270,7 @@
         stock:parseInt(document.getElementById('stock').value)||0,
         leadTime:parseInt(document.getElementById('leadTime').value)||0,
         components:components,
+        technicalInfo:currentTechResources,
         createdAt:new Date().toISOString()
       };
       const existing = readProducts().find(x=>x.id===id);
@@ -183,8 +281,8 @@
       alert('Producto guardado');
     })
 
-    newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; window.scrollTo({top:0,behavior:'smooth'})})
-    cancelBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value='';})
+    newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; renderTechResources(); resourceUrl.value=''; window.scrollTo({top:0,behavior:'smooth'})})
+    cancelBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; renderTechResources(); resourceUrl.value='';})
     search.addEventListener('input',e=>render(e.target.value))
 
     exportBtn.addEventListener('click',()=>{
@@ -208,8 +306,8 @@
     // init sample data if empty
     if(!localStorage.getItem(STORAGE_KEY)){
       const sample = [
-        {id:uid(),sku:'GWAY-001',name:'Gateway LoRa 12V',description:'Receptor LoRa para monitoreo remoto',supplier:'Buena Huella',priceUsd:120,priceArs:25000,stock:5,leadTime:0,components:[{sku:'CMP-001',qty:1},{sku:'CMP-002',qty:1}],createdAt:new Date().toISOString()},
-        {id:uid(),sku:'SENS-001',name:'Sensor Ultrasónico Nivel',description:'Sensor para medir nivel de agua',supplier:'Buena Huella',priceUsd:45,priceArs:9500,stock:8,leadTime:0,components:[{sku:'CMP-001',qty:1}],createdAt:new Date().toISOString()}
+        {id:uid(),sku:'GWAY-001',name:'Gateway LoRa 12V',description:'Receptor LoRa para monitoreo remoto',supplier:'Buena Huella',priceUsd:120,priceArs:25000,stock:5,leadTime:0,components:[{sku:'CMP-001',qty:1},{sku:'CMP-002',qty:1}],technicalInfo:[{type:'web',url:'https://buenahuella.com.ar/gateway'},{type:'youtube',url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ'}],createdAt:new Date().toISOString()},
+        {id:uid(),sku:'SENS-001',name:'Sensor Ultrasónico Nivel',description:'Sensor para medir nivel de agua',supplier:'Buena Huella',priceUsd:45,priceArs:9500,stock:8,leadTime:0,components:[{sku:'CMP-001',qty:1}],technicalInfo:[{type:'web',url:'https://buenahuella.com.ar/sensor'},{type:'local',url:'C:\\docs\\datasheet-sensor.pdf'}],createdAt:new Date().toISOString()}
       ];
       saveProducts(sample);
     }
