@@ -91,12 +91,12 @@
     <p style="margin-top:10px" class="small">Volver al <a href="index.html">inicio</a></p>
   </div>
 
+  <script src="js/api.js"></script>
   <script>
-    // Storage and CRUD
-    const STORAGE_KEY = 'buena_components_v1';
+    // Storage: usa api.js (API + localStorage fallback)
     function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-    function readComponents(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return[]}}
-    function saveComponents(list){localStorage.setItem(STORAGE_KEY,JSON.stringify(list))}
+    function readComponents(){ return localReadComponents(); }
+    function saveComponents(list){ localSaveComponents(list); }
 
     // DOM refs
     const tableBody = document.querySelector('#componentsTable tbody');
@@ -148,12 +148,13 @@
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
-    function deleteComponent(id){
-      const list = readComponents().filter(x=>x.id!==id);
-      saveComponents(list); render(search.value);
+    async function deleteComponent(id){
+      if(!confirm('¿Borrar componente?')) return;
+      await deleteComponent(id);
+      render(search.value);
     }
 
-    form.addEventListener('submit',e=>{
+    form.addEventListener('submit', async e=>{
       e.preventDefault();
       const id = document.getElementById('componentId').value || uid();
       const component = {
@@ -171,8 +172,7 @@
       };
       const existing = readComponents().find(x=>x.id===id);
       if(existing) component.createdAt = existing.createdAt;
-      const list = readComponents().filter(x=>x.id!==id).concat([component]);
-      saveComponents(list);
+      await saveComponent(component);
       form.reset(); document.getElementById('componentId').value=''; render();
       alert('Componente guardado');
     })
@@ -210,19 +210,29 @@
       const a = document.createElement('a'); a.href=url; a.download='componentes.csv'; a.click(); URL.revokeObjectURL(url);
     })
 
-    // init sample data if empty
-    if(!localStorage.getItem(STORAGE_KEY)){
-      const sample = [
-        {id:uid(),sku:'CMP-001',name:'Plaqueta Controlador',description:'PCB ensamblada con firmware',supplier:'Buena Huella (Interna)',priceUsd:15,priceArs:3200,leadTime:0,stock:20,notes:'Producción interna',createdAt:new Date().toISOString()},
-        {id:uid(),sku:'CMP-002',name:'Gabinete ABS 3D',description:'Gabinete impreso en ABS color negro',supplier:'Buena Huella (Interna)',priceUsd:8,priceArs:1700,leadTime:0,stock:15,notes:'Fabricación propia',createdAt:new Date().toISOString()},
-        {id:uid(),sku:'CMP-003',name:'Tornillo M3 Inox',description:'Tornillo acero inoxidable 15mm',supplier:'Proveedor Local',priceUsd:0.05,priceArs:11,leadTime:3,stock:500,notes:'Compras a granel',createdAt:new Date().toISOString()},
-        {id:uid(),sku:'CMP-004',name:'Sensor Ultrasónico',description:'HC-SR04 o similar para nivel',supplier:'Distribuidor Electrónica',priceUsd:2.5,priceArs:550,leadTime:7,stock:30,notes:'Importación',createdAt:new Date().toISOString()}
-      ];
-      saveComponents(sample);
-    }
+    // Init: cargar desde API
+    (async ()=>{
+      const online = await checkApiStatus();
+      const statusEl = document.createElement('div');
+      statusEl.style.cssText = 'position:fixed;bottom:8px;right:8px;padding:6px 10px;border-radius:20px;font-size:12px;z-index:9999;color:#fff;background:' + (online ? '#2d5a27' : '#888');
+      statusEl.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
+      document.body.appendChild(statusEl);
 
-    render();
-    window._buena = {readComponents,saveComponents,render};
+      if (online) {
+        await getComponents();
+      } else if (!localReadComponents().length) {
+        const sample = [
+          {id:uid(),sku:'CMP-001',name:'Plaqueta Controlador',description:'PCB ensamblada con firmware',supplier:'Buena Huella (Interna)',priceUsd:15,priceArs:3200,leadTime:0,stock:20,notes:'Producción interna',createdAt:new Date().toISOString()},
+          {id:uid(),sku:'CMP-002',name:'Gabinete ABS 3D',description:'Gabinete impreso en ABS color negro',supplier:'Buena Huella (Interna)',priceUsd:8,priceArs:1700,leadTime:0,stock:15,notes:'Fabricación propia',createdAt:new Date().toISOString()},
+          {id:uid(),sku:'CMP-003',name:'Tornillo M3 Inox',description:'Tornillo acero inoxidable 15mm',supplier:'Proveedor Local',priceUsd:0.05,priceArs:11,leadTime:3,stock:500,notes:'Compras a granel',createdAt:new Date().toISOString()},
+          {id:uid(),sku:'CMP-004',name:'Sensor Ultrasónico',description:'HC-SR04 o similar para nivel',supplier:'Distribuidor Electrónica',priceUsd:2.5,priceArs:550,leadTime:7,stock:30,notes:'Importación',createdAt:new Date().toISOString()}
+        ];
+        localSaveComponents(sample);
+      }
+      render();
+    })();
+
+    window._buena = {readComponents:localReadComponents, render};
   </script>
 </body>
 </html>

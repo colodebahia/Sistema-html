@@ -80,13 +80,13 @@
     <p style="margin-top:10px" class="small">Volver al <a href="index.html">inicio</a></p>
   </div>
 
+  <script src="js/api.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // Storage and basic CRUD
-    const STORAGE_KEY = 'buena_clients_v1';
+    // Storage: usa api.js (API + localStorage fallback)
     function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-    function readClients(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return[]}}
-    function saveClients(list){localStorage.setItem(STORAGE_KEY,JSON.stringify(list))}
+    function readClients(){ return localReadClients(); }
+    function saveClients(list){ localSaveClients(list); }
 
     // DOM refs
     const tableBody = document.querySelector('#clientsTable tbody');
@@ -174,10 +174,16 @@
 
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
+    async function deleteClientHandler(id){
+      if(!confirm('¿Borrar cliente?')) return;
+      await deleteClient(id);
+      render(search.value);
+    }
+
     tableBody.addEventListener('click',e=>{
       const id = e.target.getAttribute('data-id');
       if(e.target.classList.contains('edit')){openEdit(id)}
-      if(e.target.classList.contains('del')){if(confirm('Borrar cliente?')){deleteClient(id)}}
+      if(e.target.classList.contains('del')){deleteClientHandler(id)}
     })
 
     function openEdit(id){
@@ -198,19 +204,14 @@
     }
 
     function deleteClient(id){
-      const list = readClients().filter(x=>x.id!==id);
-      saveClients(list); render(search.value);
+      return deleteClient(id); // usa api.js
     }
-
-    form.addEventListener('submit',e=>{
       e.preventDefault();
       const id = document.getElementById('clientId').value || uid();
       const client = { id, name:document.getElementById('name').value.trim(), phone:document.getElementById('phone').value.trim(), email:document.getElementById('email').value.trim(), location:document.getElementById('location').value.trim(), notes:document.getElementById('notes').value.trim(), geometry:null };
-      // preserve existing geometry if editing
       const existing = readClients().find(x=>x.id===id);
       if(existing && existing.geometry) client.geometry = existing.geometry;
-      const list = readClients().filter(x=>x.id!==id).concat([client]);
-      saveClients(list);
+      await saveClient(client);
       form.reset(); document.getElementById('clientId').value=''; render();
     })
 
@@ -313,15 +314,24 @@
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'clientes_geometrias.kml'; a.click(); URL.revokeObjectURL(a.href);
     })
 
-    // init sample data if empty
-    if(!localStorage.getItem(STORAGE_KEY)){
-      const sample = [{id:uid(),name:'Cristian Acuña',phone:'+54 291 418-3874',email:'cristian@example.com',location:'Pedro Luro',notes:'Cliente ejemplo',geometry:null}];
-      saveClients(sample);
-    }
+    // Init: cargar desde API (sincroniza con server)
+    (async ()=>{
+      const online = await checkApiStatus();
+      const statusEl = document.createElement('div');
+      statusEl.style.cssText = 'position:fixed;bottom:8px;right:8px;padding:6px 10px;border-radius:20px;font-size:12px;z-index:9999;color:#fff;background:' + (online ? '#2d5a27' : '#888');
+      statusEl.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
+      document.body.appendChild(statusEl);
 
-    render();
-    // expose for console
-    window._buena = {readClients,saveClients,render};
+      if (online) {
+        await getClients(); // sincroniza cache local con servidor
+      } else if (!localReadClients().length) {
+        const sample = [{id:uid(),name:'Cristian Acuña',phone:'+54 291 418-3874',email:'cristian@example.com',location:'Pedro Luro',notes:'Cliente ejemplo',geometry:null}];
+        localSaveClients(sample);
+      }
+      render();
+    })();
+
+    window._buena = {readClients:localReadClients, render};
   </script>
 </body>
 </html>

@@ -19,6 +19,7 @@
     .sidebar{width:320px}
     .layout{display:grid;grid-template-columns:1fr 320px;gap:12px}
     @media(max-width:900px){.layout{grid-template-columns:1fr}}
+    select{min-width:150px;font-size:16px}
   </style>
 </head>
 <body>
@@ -26,13 +27,13 @@
   <div class="wrap">
     <div class="card layout">
       <div>
-        <div class="no-print" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-          <select id="clientSelect"><option value="">-- Seleccionar cliente --</option></select>
+        <div class="no-print" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+          <select id="clientSelect" style="flex:1;min-width:180px"><option value="">-- Seleccionar cliente --</option></select>
           <button class="btn" id="newClientBtn">Nuevo</button>
-          <button class="btn secondary" id="loadClientBtn">Cargar cliente</button>
-          <button class="btn" id="printBtn">Imprimir / PDF</button>
-          <button class="btn secondary" id="saveBudgetBtn">Guardar presupuesto</button>
-          <button class="btn" id="shareWhatsAppBtn" style="background:#25d366">📱 WhatsApp</button>
+          <button class="btn secondary" id="loadClientBtn">Cargar</button>
+          <button class="btn" id="printBtn">PDF</button>
+          <button class="btn secondary" id="saveBudgetBtn">Guardar</button>
+          <button class="btn" id="shareWhatsAppBtn" style="background:#25d366">📱 WA</button>
           <button class="btn" id="shareEmailBtn" style="background:#0066cc">✉️ Email</button>
         </div>
 
