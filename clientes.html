@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Clientes - Buena Huella</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-sA+qg3kQf+gS3p0u3E2kqKkR5m0b2b3l1bM6b6s5Q3s=" crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f5f5f5}
     header{background:#2d5a27;color:#fff;padding:14px;text-align:center}
@@ -80,8 +80,7 @@
     <p style="margin-top:10px" class="small">Volver al <a href="index.html">inicio</a></p>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-o9N1j7kG7QY0z8gGk3mXb0xR6/6b6s5Q3s2k1gGk3Hk=" crossorigin=""></script>
-  <script src="https://unpkg.com/togeojson@0.16.0/dist/togeojson.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // Storage and basic CRUD
     const STORAGE_KEY = 'buena_clients_v1';
@@ -106,6 +105,42 @@
     const map = L.map('map',{zoomControl:true}).setView([-38, -62],4);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
     const geoLayer = L.layerGroup().addTo(map);
+
+    // Simple KML to GeoJSON parser
+    function kmlToGeoJSON(kmlString){
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(kmlString, 'text/xml');
+      const features = [];
+      const placemarks = doc.getElementsByTagName('Placemark');
+      
+      for(let i = 0; i < placemarks.length; i++){
+        const pm = placemarks[i];
+        const name = pm.getElementsByTagName('name')[0]?.textContent || 'Placemark '+(i+1);
+        const description = pm.getElementsByTagName('description')[0]?.textContent || '';
+        
+        // Parse Point
+        const points = pm.getElementsByTagName('Point');
+        if(points.length){
+          const coords = points[0].getElementsByTagName('coordinates')[0]?.textContent.trim().split(',');
+          if(coords && coords.length >= 2){
+            features.push({type:'Feature',properties:{name,description},geometry:{type:'Point',coordinates:[parseFloat(coords[0]),parseFloat(coords[1])]}});
+          }
+        }
+        
+        // Parse Polygon
+        const polygons = pm.getElementsByTagName('Polygon');
+        if(polygons.length){
+          const coords = polygons[0].getElementsByTagName('coordinates')[0]?.textContent.trim().split('\n').filter(s=>s.trim());
+          if(coords){
+            const ring = coords.map(c=>{const p=c.trim().split(',');return[parseFloat(p[0]),parseFloat(p[1])]});
+            if(ring.length){
+              features.push({type:'Feature',properties:{name,description},geometry:{type:'Polygon',coordinates:[ring]}});
+            }
+          }
+        }
+      }
+      return {type:'FeatureCollection',features};
+    }
 
     function render(filter){
       const q = (filter||'').toLowerCase();
@@ -202,7 +237,7 @@
       try{
         const parser = new DOMParser();
         const doc = parser.parseFromString(text,'text/xml');
-        const gj = toGeoJSON.kml(doc);
+        const gj = kmlToGeoJSON(text);
         // if client selected, attach geometry; else create new client per feature
         const selId = document.getElementById('clientId').value;
         if(selId){
