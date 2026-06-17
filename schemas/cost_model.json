@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CostModel",
+  "type": "object",
+  "required": ["product_sku","bom_version","components"],
+  "properties": {
+    "product_sku": {"type":"string"},
+    "bom_version": {"type":"integer"},
+    "exchange_rate": {"type":"number","description":"USD->ARS rate used"},
+    "components": {
+      "type":"array",
+      "items": {
+        "type":"object",
+        "required":["component_sku","qty","unit_cost_usd"],
+        "properties":{
+          "component_sku":{"type":"string"},
+          "name":{"type":"string"},
+          "qty":{"type":"number"},
+          "unit_cost_usd":{"type":"number"},
+          "unit_cost_ars":{"type":"number"},
+          "supplier":{"type":"string"}
+        }
+      }
+    },
+    "labour": {
+      "type":"object",
+      "properties":{
+        "hours_per_unit":{"type":"number"},
+        "cost_per_hour_ars":{"type":"number"},
+        "cost_per_hour_usd":{"type":"number"}
+      }
+    },
+    "amortization": {
+      "type":"array",
+      "items":{
+        "type":"object",
+        "properties":{
+          "asset_name":{"type":"string"},
+          "cost":{"type":"number"},
+          "life_hours":{"type":"number"},
+          "hours_per_unit":{"type":"number"}
+        }
+      }
+    },
+    "overhead_pct":{"type":"number"}
+  }
+}

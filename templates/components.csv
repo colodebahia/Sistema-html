@@ -1,0 +1,4 @@
+component_sku,component_name,description,unit_cost_usd,unit_cost_ars,supplier,lead_time_days,notes
+CMP-001,Plaqueta controlador,Placa PCB ensamblada,15.00,0,ProveedorA,14,Ej: incluye firmware
+CMP-002,Gabinete impreso 3D,Gabinete ABS impreso,8.00,0,ProveedorLocal,7,Indicar color/material
+CMP-003,Tornillo M3,Tornillo acero inoxidable,0.05,0,ProveedorX,30,
