@@ -30,8 +30,10 @@
           <select id="clientSelect"><option value="">-- Seleccionar cliente --</option></select>
           <button class="btn" id="newClientBtn">Nuevo</button>
           <button class="btn secondary" id="loadClientBtn">Cargar cliente</button>
-          <button class="btn" id="printBtn">Imprimir / Guardar PDF</button>
+          <button class="btn" id="printBtn">Imprimir / PDF</button>
           <button class="btn secondary" id="saveBudgetBtn">Guardar presupuesto</button>
+          <button class="btn" id="shareWhatsAppBtn" style="background:#25d366">📱 WhatsApp</button>
+          <button class="btn" id="shareEmailBtn" style="background:#0066cc">✉️ Email</button>
         </div>
 
         <div id="presupuesto">
@@ -50,8 +52,17 @@
           </div>
 
           <div style="margin-top:12px;text-align:right">
+            <label style="margin-right:12px"><input type="checkbox" id="showDetailsCbx" checked> Mostrar detalles de componentes</label>
+            <div style="margin-top:6px">
+              <label>IVA (%):<input id="ivaPct" type="number" value="21" step="0.1" min="0" style="width:60px;margin-left:4px" /></label>
+            </div>
+          </div>
+          <div style="margin-top:12px;text-align:right">
             <div>Tipo de cambio (oficial vendedor): <span id="rate">-</span></div>
-            <div style="font-weight:700;font-size:18px">Total USD: $<span id="totalUsd">0.00</span> · Total ARS: $<span id="totalArs">0.00</span></div>
+            <div style="font-weight:700;font-size:18px">Total USD: $<span id="totalUsd">0.00</span></div>
+            <div style="font-weight:700;font-size:16px">Subtotal ARS: $<span id="totalArs">0.00</span></div>
+            <div style="font-weight:700;color:#d9534f">IVA (21%): $<span id="totalIva">0.00</span></div>
+            <div style="font-weight:700;font-size:18px;background:#f0f0f0;padding:8px;border-radius:4px">Total con IVA: $<span id="totalWithIva">0.00</span></div>
           </div>
         </div>
       </div>
@@ -89,6 +100,18 @@
 
     populateClients(); renderHistory();
 
+    // Listeners para recalcular IVA
+    document.getElementById('ivaPct').addEventListener('change', recalcTotals);
+    document.getElementById('showDetailsCbx').addEventListener('change', ()=>{
+      // Mostrar/ocultar columna de detalles
+      const rows = document.querySelectorAll('#itemsTable tbody tr');
+      const showDetails = document.getElementById('showDetailsCbx').checked;
+      rows.forEach(r=>{
+        const componentsTd = r.querySelector('td.components-detail');
+        if(componentsTd) componentsTd.style.display = showDetails ? 'table-cell' : 'none';
+      })
+    });
+
     document.getElementById('loadClientBtn').addEventListener('click',()=>{
       const id = clientSelect.value; if(!id) return alert('Seleccioná un cliente'); const c = readClients().find(x=>x.id===id); if(!c) return; document.getElementById('clienteNombre').textContent = 'Cliente: '+c.name; document.getElementById('clienteContacto').textContent = 'Contacto: '+(c.phone||c.email||' - ');
     })
@@ -97,10 +120,44 @@
     function addItem(desc,qty,unitUsd){ const tbody = document.querySelector('#itemsTable tbody'); const row = document.createElement('tr'); const subUsd = (qty*unitUsd)||0; const rateObj = JSON.parse(localStorage.getItem('buena_dolar_oficial')||'null'); const rate = rateObj?Number(rateObj.rate):null; const subArs = rate? (subUsd*rate).toFixed(2) : '-'; row.innerHTML = `<td>${escapeHtml(desc)}</td><td class="right">${qty}</td><td class="right">${Number(unitUsd).toFixed(2)}</td><td class="right">${Number(subUsd).toFixed(2)}</td><td class="right">${subArs}</td>`; tbody.appendChild(row); recalcTotals(); }
     document.getElementById('addItemBtn').addEventListener('click',()=>{ const d=document.getElementById('desc').value.trim(); const q=Number(document.getElementById('qty').value)||1; const u=Number(document.getElementById('unitUsd').value)||0; if(!d) return alert('Ingresar descripción'); addItem(d,q,u); document.getElementById('desc').value=''; document.getElementById('unitUsd').value=''; })
 
-    function recalcTotals(){ const rows = document.querySelectorAll('#itemsTable tbody tr'); let totalUsd=0; let totalArs=0; const rateObj = JSON.parse(localStorage.getItem('buena_dolar_oficial')||'null'); const rate = rateObj?Number(rateObj.rate):null; rows.forEach(r=>{ const usd = Number(r.children[3].textContent)||0; totalUsd += usd; if(rate){ const ars = usd*rate; totalArs += ars; r.children[4].textContent = ars.toFixed(2) } else { r.children[4].textContent = '-' } }); document.getElementById('totalUsd').textContent = totalUsd.toFixed(2); document.getElementById('totalArs').textContent = rate?totalArs.toFixed(2):( '-'); document.getElementById('rate').textContent = rate? rate+' ARS' : 'No disponible'; }
+    function recalcTotals(){ 
+      const rows = document.querySelectorAll('#itemsTable tbody tr'); 
+      let totalUsd=0; 
+      let totalArs=0; 
+      const rateObj = JSON.parse(localStorage.getItem('buena_dolar_oficial')||'null'); 
+      const rate = rateObj?Number(rateObj.rate):null; 
+      const ivaPct = Number(document.getElementById('ivaPct').value)||21;
+      rows.forEach(r=>{ 
+        const usd = Number(r.children[3].textContent)||0; 
+        totalUsd += usd; 
+        if(rate){ 
+          const ars = usd*rate; 
+          totalArs += ars; 
+          r.children[4].textContent = ars.toFixed(2) 
+        } else { 
+          r.children[4].textContent = '-' 
+        } 
+      }); 
+      document.getElementById('totalUsd').textContent = totalUsd.toFixed(2); 
+      document.getElementById('totalArs').textContent = rate?totalArs.toFixed(2):'-'; 
+      const iva = rate ? (totalArs * ivaPct / 100) : 0;
+      const totalWithIva = rate ? (totalArs + iva) : 0;
+      document.getElementById('totalIva').textContent = iva.toFixed(2);
+      document.getElementById('totalWithIva').textContent = totalWithIva.toFixed(2);
+      document.getElementById('rate').textContent = rate? rate+' ARS' : 'No disponible'; 
+    }
 
-    // load saved rate
-    (function(){ const r = localStorage.getItem('buena_dolar_oficial'); if(r){ try{ const obj=JSON.parse(r); document.getElementById('rate').textContent = obj.rate+' ARS'; }catch(e){} } })();
+    // Recalc on IVA change
+    document.getElementById('ivaPct').addEventListener('change', recalcTotals);
+    document.getElementById('showDetailsCbx').addEventListener('change', ()=>{
+      // Mostrar/ocultar fila de componentes en tabla
+      const rows = document.querySelectorAll('#itemsTable tbody tr');
+      const showDetails = document.getElementById('showDetailsCbx').checked;
+      rows.forEach(r=>{
+        const componentsTd = r.querySelector('td.components-detail');
+        if(componentsTd) componentsTd.style.display = showDetails ? 'table-cell' : 'none';
+      })
+    });
 
     // Print
     document.getElementById('printBtn').addEventListener('click',()=>{ window.print(); })
@@ -132,6 +189,80 @@
     // export/clear
     document.getElementById('exportAllBtn').addEventListener('click',()=>{ const data = JSON.stringify(readBudgets()); const blob = new Blob([data],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='presupuestos.json'; a.click(); URL.revokeObjectURL(a.href); })
     document.getElementById('clearAllBtn').addEventListener('click',()=>{ if(confirm('Borrar todo el historial de presupuestos?')){ saveBudgets([]); renderHistory(); alert('Historial borrado') } })
+
+    // Generate formatted budget text
+    function generateBudgetText(){
+      let text = 'PRESUPUESTO - Buena Huella\n';
+      text += '═════════════════════════════════════════\n\n';
+      text += document.getElementById('clienteNombre').textContent + '\n';
+      text += document.getElementById('clienteContacto').textContent + '\n\n';
+      const showDetails = document.getElementById('showDetailsCbx').checked;
+      text += 'ITEMS:\n─────────────────────────────────────────\n';
+      const rows = document.querySelectorAll('#itemsTable tbody tr');
+      if(rows.length===0){
+        text += '(sin items)\n';
+      } else {
+        rows.forEach(r=>{
+          const desc = r.children[0].textContent;
+          const qty = r.children[1].textContent;
+          const unit = r.children[2].textContent;
+          const sub = r.children[3].textContent;
+          text += `${qty}x ${desc}: USD $${sub}\n`;
+          if(showDetails){
+            const componentsTd = r.querySelector('td.components-detail');
+            if(componentsTd && componentsTd.textContent.trim()){
+              text += `   Detalles: ${componentsTd.textContent.trim()}\n`;
+            }
+          }
+        });
+      }
+      text += '\n─────────────────────────────────────────\n';
+      text += 'TOTAL USD: $' + document.getElementById('totalUsd').textContent + '\n';
+      const arsText = document.getElementById('totalArs').textContent;
+      if(arsText !== '-'){
+        text += 'Subtotal ARS: $' + arsText + '\n';
+      }
+      const ivaText = document.getElementById('totalIva').textContent;
+      if(ivaText && Number(ivaText) > 0){
+        text += 'IVA (21%): $' + ivaText + '\n';
+        text += 'TOTAL CON IVA: $' + document.getElementById('totalWithIva').textContent + '\n';
+      }
+      const rateText = document.getElementById('rate').textContent;
+      if(rateText !== 'No disponible'){
+        text += 'T.C.: ' + rateText + '\n';
+      }
+      text += '\nFecha: ' + new Date().toLocaleDateString('es-AR') + '\n';
+      text += '\n─────────────────────────────────────────\n';
+      text += 'www.buenahuella.com.ar\n';
+      return text;
+    }
+
+    // WhatsApp share
+    document.getElementById('shareWhatsAppBtn').addEventListener('click',()=>{
+      const phone = (readClients().find(c=>c.id===clientSelect.value)||{}).phone || '';
+      if(!phone){
+        return alert('Selecciona un cliente con teléfono registrado');
+      }
+      const text = generateBudgetText();
+      const encoded = encodeURIComponent(text);
+      const cleanPhone = phone.replace(/[^\d+]/g, ''); // remove non-digit chars except +
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encoded}`;
+      window.open(whatsappUrl, '_blank');
+    })
+
+    // Email share
+    document.getElementById('shareEmailBtn').addEventListener('click',()=>{
+      const client = readClients().find(c=>c.id===clientSelect.value);
+      const email = client?client.email:'';
+      if(!email){
+        return alert('Selecciona un cliente con email registrado');
+      }
+      const text = generateBudgetText();
+      const subject = encodeURIComponent('Presupuesto - Buena Huella');
+      const body = encodeURIComponent(text);
+      const mailtoUrl = `mailto:${email}?subject=${subject}&body=${body}`;
+      window.location.href = mailtoUrl;
+    })
 
     // New client quick link
     document.getElementById('newClientBtn').addEventListener('click',()=>{ location.href='clientes.html' })
