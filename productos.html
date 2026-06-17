@@ -40,9 +40,16 @@
       <div class="grid">
         <div>
           <table id="productsTable">
-            <thead><tr><th>SKU</th><th>Nombre</th><th>Precio USD</th><th>Precio ARS</th><th>Stock</th><th>Soporte</th><th></th></tr></thead>
+            <thead><tr><th>Foto</th><th>SKU</th><th>Nombre</th><th>Precio USD</th><th>Precio ARS</th><th>Stock</th><th>Soporte</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
+          <div id="imageModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999;padding:20px;overflow-y:auto">
+            <div style="background:#fff;max-width:600px;margin:40px auto;border-radius:8px;padding:20px">
+              <h3 id="imageModalTitle">Imágenes</h3>
+              <div id="imageModalContent" style="max-height:400px;overflow-y:auto"></div>
+              <button class="btn secondary" id="closeImageModalBtn" style="width:100%">Cerrar</button>
+            </div>
+          </div>
           <div id="resourcesModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999;padding:20px;overflow-y:auto">
             <div style="background:#fff;max-width:600px;margin:40px auto;border-radius:8px;padding:20px">
               <h3 id="modalTitle">Recursos Técnicos</h3>
@@ -86,6 +93,10 @@
               </div>
               <label class="label">Componentes (JSON)</label>
               <textarea id="components" rows="3" placeholder='[{"sku":"CMP-001","qty":1}]'></textarea>
+              <label class="label">Fotos del Producto</label>
+              <input type="file" id="imageUpload" accept="image/*" style="font-size:12px" />
+              <div id="imagesList" style="max-height:120px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:8px;margin-bottom:8px"></div>
+              <button type="button" class="btn secondary" id="addImageBtn" style="width:100%;margin-bottom:8px">+ Agregar Foto</button>
               <label class="label">Información Técnica</label>
               <div id="techResourcesList" style="max-height:150px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;padding:8px;margin-bottom:8px"></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
@@ -132,9 +143,17 @@
     const closeModalBtn = document.getElementById('closeModalBtn');
     const modalTitle = document.getElementById('modalTitle');
     const modalResources = document.getElementById('modalResources');
+    const imageModal = document.getElementById('imageModal');
+    const closeImageModalBtn = document.getElementById('closeImageModalBtn');
+    const imageModalTitle = document.getElementById('imageModalTitle');
+    const imageModalContent = document.getElementById('imageModalContent');
+    const imageUpload = document.getElementById('imageUpload');
+    const addImageBtn = document.getElementById('addImageBtn');
+    const imagesList = document.getElementById('imagesList');
 
     // Technical resources state
     let currentTechResources = [];
+    let currentImages = [];
 
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
@@ -153,6 +172,41 @@
         });
         techResourcesList.appendChild(item);
       }
+    }
+
+    function renderImagesList(){
+      imagesList.innerHTML = '';
+      for(let i = 0; i < currentImages.length; i++){
+        const img = currentImages[i];
+        const item = document.createElement('div');
+        item.style.cssText = 'padding:4px;border-bottom:1px solid #eee;font-size:12px;display:flex;justify-content:space-between;align-items:center';
+        const preview = img.startsWith('data:') ? '[Base64]' : img.substring(0,40);
+        item.innerHTML = `<span>🖼️ ${escapeHtml(preview)}</span><button type="button" data-idx="${i}" class="btn secondary" style="padding:4px 6px;font-size:11px">Quitar</button>`;
+        item.querySelector('button').addEventListener('click',e=>{
+          currentImages.splice(parseInt(e.target.getAttribute('data-idx')), 1);
+          renderImagesList();
+        });
+        imagesList.appendChild(item);
+      }
+    }
+
+    function showImages(productName, images){
+      imageModalTitle.textContent = 'Fotos: '+productName;
+      imageModalContent.innerHTML = '';
+      if(!images.length){
+        imageModalContent.innerHTML = '<p style="color:#999">Sin imágenes</p>';
+      } else {
+        for(const img of images){
+          const div = document.createElement('div');
+          div.style.cssText = 'margin-bottom:12px;text-align:center';
+          const imgEl = document.createElement('img');
+          imgEl.src = img;
+          imgEl.style.cssText = 'max-width:100%;max-height:300px;border-radius:4px;border:1px solid #ddd';
+          div.appendChild(imgEl);
+          imageModalContent.appendChild(div);
+        }
+      }
+      imageModal.style.display = 'block';
     }
 
     function showResources(productName, resources){
@@ -191,6 +245,30 @@
       if(e.target === resourcesModal) resourcesModal.style.display = 'none';
     })
 
+    closeImageModalBtn.addEventListener('click',()=>{
+      imageModal.style.display = 'none';
+    })
+
+    imageModal.addEventListener('click',e=>{
+      if(e.target === imageModal) imageModal.style.display = 'none';
+    })
+
+    addImageBtn.addEventListener('click',()=>{
+      imageUpload.click();
+    })
+
+    imageUpload.addEventListener('change',e=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        currentImages.push(evt.target.result);
+        renderImagesList();
+        imageUpload.value = '';
+      };
+      reader.readAsDataURL(file);
+    })
+
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
     function render(filter){
@@ -204,7 +282,9 @@
         const tr = document.createElement('tr');
         const techCount = (p.technicalInfo || []).length;
         const techBtn = techCount > 0 ? `<button type="button" data-sku="${p.sku}" data-name="${p.name}" class="btn secondary view-resources" style="font-size:12px">📚 ${techCount}</button>` : '—';
-        tr.innerHTML = `<td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.name||'')}</td><td>${(p.priceUsd||0).toFixed(2)}</td><td>${(p.priceArs||0).toFixed(2)}</td><td>${p.stock||0}</td><td>${techBtn}</td><td class="actions"><button data-id="${p.id}" class="btn secondary edit">Editar</button><button data-id="${p.id}" class="btn secondary del">Borrar</button></td>`;
+        const photoCount = (p.images || []).length;
+        const photoBtn = photoCount > 0 ? `<button type="button" data-sku="${p.sku}" data-name="${p.name}" class="btn secondary view-images" style="font-size:12px;background:#0066cc">📷 ${photoCount}</button>` : '—';
+        tr.innerHTML = `<td>${photoBtn}</td><td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.name||'')}</td><td>${(p.priceUsd||0).toFixed(2)}</td><td>${(p.priceArs||0).toFixed(2)}</td><td>${p.stock||0}</td><td>${techBtn}</td><td class="actions"><button data-id="${p.id}" class="btn secondary edit">Editar</button><button data-id="${p.id}" class="btn secondary del">Borrar</button></td>`;
         tableBody.appendChild(tr);
       }
       // Attach event listeners to resource buttons
@@ -214,6 +294,15 @@
           const name = e.target.getAttribute('data-name');
           const p = readProducts().find(x=>x.sku===sku);
           if(p) showResources(name, p.technicalInfo || []);
+        })
+      })
+      // Attach event listeners to image buttons
+      document.querySelectorAll('.view-images').forEach(btn=>{
+        btn.addEventListener('click',e=>{
+          const sku = e.target.getAttribute('data-sku');
+          const name = e.target.getAttribute('data-name');
+          const p = readProducts().find(x=>x.sku===sku);
+          if(p) showImages(name, p.images || []);
         })
       })
     }
@@ -239,7 +328,9 @@
       document.getElementById('leadTime').value = p.leadTime||0;
       document.getElementById('components').value = p.components ? JSON.stringify(p.components,null,2) : '[]';
       currentTechResources = p.technicalInfo ? [...p.technicalInfo] : [];
+      currentImages = p.images ? [...p.images] : [];
       renderTechResources();
+      renderImagesList();
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
@@ -271,6 +362,7 @@
         leadTime:parseInt(document.getElementById('leadTime').value)||0,
         components:components,
         technicalInfo:currentTechResources,
+        images:currentImages,
         createdAt:new Date().toISOString()
       };
       const existing = readProducts().find(x=>x.id===id);
@@ -281,8 +373,8 @@
       alert('Producto guardado');
     })
 
-    newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; renderTechResources(); resourceUrl.value=''; window.scrollTo({top:0,behavior:'smooth'})})
-    cancelBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; renderTechResources(); resourceUrl.value='';})
+    newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; currentImages = []; renderTechResources(); renderImagesList(); resourceUrl.value=''; imageUpload.value=''; window.scrollTo({top:0,behavior:'smooth'})})
+    cancelBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; currentImages = []; renderTechResources(); renderImagesList(); resourceUrl.value=''; imageUpload.value='';})
     search.addEventListener('input',e=>render(e.target.value))
 
     exportBtn.addEventListener('click',()=>{
