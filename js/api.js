@@ -3,16 +3,24 @@
  * Usa la API REST si está disponible, sino cae a localStorage (offline).
  */
 
-const API_URL = 'http://localhost:3000/api';
+const API_HOST = window.location.hostname || 'localhost';
+const API_PROTOCOL = window.location.protocol === 'https:' ? 'https' : 'http';
+const DEFAULT_NODE_API = `${API_PROTOCOL}://${API_HOST}:3000/api`;
+const DEFAULT_PHP_API = `${window.location.origin}/sistema/api`;
+const API_URL = window.BUENA_API_URL || ((API_HOST === 'localhost' || API_HOST === '127.0.0.1') ? DEFAULT_NODE_API : DEFAULT_PHP_API);
 
 // ── Helpers ──────────────────────────────────────────────
 
 async function apiFetch(method, endpoint, body) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
   const res = await fetch(`${API_URL}${endpoint}`, {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
+    signal: controller.signal
   });
+  clearTimeout(timeoutId);
   if (!res.ok && res.status !== 204) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || `Error ${res.status}`);

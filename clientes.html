@@ -26,6 +26,9 @@
 </head>
 <body>
   <header><h1>Clientes — Buena Huella</h1></header>
+  <div id="apiStatusBanner" style="position:sticky;top:0;z-index:9999;padding:10px 12px;text-align:center;font-weight:700;background:#666;color:#fff">
+    Estado API: verificando...
+  </div>
   <div class="wrap">
     <div class="card">
       <div class="toolbar">
@@ -33,6 +36,7 @@
         <button class="btn" id="newBtn">+ Nuevo cliente</button>
         <button class="btn secondary" id="exportBtn">Exportar JSON</button>
         <button class="btn secondary" id="importBtn">Importar JSON</button>
+        <span id="apiStatusBadge" class="small" style="padding:6px 10px;border-radius:20px;background:#888;color:#fff">Estado API...</span>
       </div>
       <div class="grid">
         <div>
@@ -101,10 +105,19 @@
     const exportKmlBtn = document.getElementById('exportKmlBtn');
     const exportAllKmlBtn = document.getElementById('exportAllKmlBtn');
 
-    // Leaflet map
-    const map = L.map('map',{zoomControl:true}).setView([-38, -62],4);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
-    const geoLayer = L.layerGroup().addTo(map);
+    // Leaflet map (si falla carga de CDN, no rompe el resto del CRUD)
+    let map = null;
+    let geoLayer = null;
+    if (window.L) {
+      map = L.map('map',{zoomControl:true}).setView([-38, -62],4);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors'}).addTo(map);
+      geoLayer = L.layerGroup().addTo(map);
+    } else {
+      const mapEl = document.getElementById('map');
+      if (mapEl) {
+        mapEl.innerHTML = '<div style="padding:12px;color:#666">Mapa no disponible (sin conexión a CDN Leaflet).</div>';
+      }
+    }
 
     // Simple KML to GeoJSON parser
     function kmlToGeoJSON(kmlString){
@@ -149,13 +162,13 @@
         return (c.name||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q)
       });
       tableBody.innerHTML = '';
-      geoLayer.clearLayers();
+      if (geoLayer) geoLayer.clearLayers();
       for(const c of clients){
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.phone||'')}</td><td>${escapeHtml(c.email||'')}</td><td>${escapeHtml(c.location||'')}</td><td class="actions"><button data-id="${c.id}" class="btn secondary edit">Editar</button><button data-id="${c.id}" class="btn secondary del">Borrar</button></td>`;
         tableBody.appendChild(tr);
         // render geometry if exists
-        if(c.geometry){
+        if(c.geometry && geoLayer && window.L){
           try{
             const gj = c.geometry; // GeoJSON
             const layer = L.geoJSON(gj,{style:{color:'#2d5a27',weight:2,opacity:0.8},pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:6,fillColor:'#2d5a27',color:'#fff',weight:1,opacity:1,fillOpacity:0.9})});
@@ -165,8 +178,8 @@
         }
       }
       // fit map to layers
-      const all = geoLayer.getLayers();
-      if(all.length){
+      const all = geoLayer ? geoLayer.getLayers() : [];
+      if(all.length && map){
         const group = L.featureGroup(all);
         map.fitBounds(group.getBounds().pad(0.2));
       }
@@ -176,7 +189,7 @@
 
     async function deleteClientHandler(id){
       if(!confirm('¿Borrar cliente?')) return;
-      await deleteClient(id);
+      await window.deleteClient(id);
       render(search.value);
     }
 
@@ -197,22 +210,30 @@
       document.getElementById('location').value = c.location||'';
       document.getElementById('notes').value = c.notes||'';
       // zoom to geometry if present
-      if(c.geometry){
+      if(c.geometry && map && window.L){
         try{ const layer = L.geoJSON(c.geometry); map.fitBounds(layer.getBounds().pad(0.2)); }catch(e){}
       }
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
-    function deleteClient(id){
-      return deleteClient(id); // usa api.js
-    }
+    form.addEventListener('submit', async e=>{
       e.preventDefault();
       const id = document.getElementById('clientId').value || uid();
-      const client = { id, name:document.getElementById('name').value.trim(), phone:document.getElementById('phone').value.trim(), email:document.getElementById('email').value.trim(), location:document.getElementById('location').value.trim(), notes:document.getElementById('notes').value.trim(), geometry:null };
+      const client = {
+        id,
+        name:document.getElementById('name').value.trim(),
+        phone:document.getElementById('phone').value.trim(),
+        email:document.getElementById('email').value.trim(),
+        location:document.getElementById('location').value.trim(),
+        notes:document.getElementById('notes').value.trim(),
+        geometry:null
+      };
       const existing = readClients().find(x=>x.id===id);
       if(existing && existing.geometry) client.geometry = existing.geometry;
-      await saveClient(client);
-      form.reset(); document.getElementById('clientId').value=''; render();
+      await window.saveClient(client);
+      form.reset();
+      document.getElementById('clientId').value='';
+      render();
     })
 
     newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('clientId').value=''; window.scrollTo({top:0,behavior:'smooth'})})
@@ -220,7 +241,7 @@
     search.addEventListener('input',e=>render(e.target.value))
 
     exportBtn.addEventListener('click',()=>{
-      const data = localStorage.getItem(STORAGE_KEY) || '[]';
+      const data = JSON.stringify(localReadClients());
       const blob = new Blob([data],{type:'application/json'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href=url; a.download='clientes.json'; a.click(); URL.revokeObjectURL(url);
@@ -316,17 +337,47 @@
 
     // Init: cargar desde API (sincroniza con server)
     (async ()=>{
-      const online = await checkApiStatus();
+      let online = false;
+      const badge = document.getElementById('apiStatusBadge');
+      const banner = document.getElementById('apiStatusBanner');
       const statusEl = document.createElement('div');
-      statusEl.style.cssText = 'position:fixed;bottom:8px;right:8px;padding:6px 10px;border-radius:20px;font-size:12px;z-index:9999;color:#fff;background:' + (online ? '#2d5a27' : '#888');
-      statusEl.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
+      statusEl.style.cssText = 'position:fixed;bottom:8px;right:8px;padding:6px 10px;border-radius:20px;font-size:12px;z-index:9999;color:#fff;background:#888';
+      statusEl.textContent = '🟡 Verificando API...';
       document.body.appendChild(statusEl);
+      try {
+        online = await Promise.race([
+          checkApiStatus(),
+          new Promise(resolve => setTimeout(() => resolve(false), 6000))
+        ]);
 
-      if (online) {
-        await getClients(); // sincroniza cache local con servidor
-      } else if (!localReadClients().length) {
-        const sample = [{id:uid(),name:'Cristian Acuña',phone:'+54 291 418-3874',email:'cristian@example.com',location:'Pedro Luro',notes:'Cliente ejemplo',geometry:null}];
-        localSaveClients(sample);
+        if (badge) {
+          badge.style.background = online ? '#2d5a27' : '#888';
+          badge.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
+        }
+        if (banner) {
+          banner.style.background = online ? '#2d5a27' : '#888';
+          banner.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
+        }
+        statusEl.style.background = online ? '#2d5a27' : '#888';
+        statusEl.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
+
+        if (online) {
+          await getClients(); // sincroniza cache local con servidor
+        } else if (!localReadClients().length) {
+          const sample = [{id:uid(),name:'Cristian Acuña',phone:'+54 291 418-3874',email:'cristian@example.com',location:'Pedro Luro',notes:'Cliente ejemplo',geometry:null}];
+          localSaveClients(sample);
+        }
+      } catch (e) {
+        if (badge) {
+          badge.style.background = '#888';
+          badge.textContent = '🟡 Modo offline';
+        }
+        if (banner) {
+          banner.style.background = '#888';
+          banner.textContent = '🟡 Modo offline';
+        }
+        statusEl.style.background = '#888';
+        statusEl.textContent = '🟡 Modo offline';
       }
       render();
     })();
