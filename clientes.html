@@ -26,9 +26,6 @@
 </head>
 <body>
   <header><h1>Clientes — Buena Huella</h1></header>
-  <div id="apiStatusBanner" style="position:sticky;top:0;z-index:9999;padding:10px 12px;text-align:center;font-weight:700;background:#666;color:#fff">
-    Estado API: verificando...
-  </div>
   <div class="wrap">
     <div class="card">
       <div class="toolbar">
@@ -197,7 +194,7 @@
       const id = e.target.getAttribute('data-id');
       if(e.target.classList.contains('edit')){openEdit(id)}
       if(e.target.classList.contains('del')){deleteClientHandler(id)}
-    })
+    });
 
     function openEdit(id){
       const clients = readClients();
@@ -317,7 +314,7 @@
       const kml = geojsonToKml(c.geometry.type==='FeatureCollection'?c.geometry:{type:'FeatureCollection',features:[c.geometry]});
       const blob = new Blob([kml],{type:'application/vnd.google-earth.kml+xml'});
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (c.name||'cliente')+'.kml'; a.click(); URL.revokeObjectURL(a.href);
-    })
+    });
 
     exportAllKmlBtn.addEventListener('click',()=>{
       const clients = readClients().filter(c=>c.geometry);
@@ -333,17 +330,12 @@
       const kml = geojsonToKml(fc);
       const blob = new Blob([kml],{type:'application/vnd.google-earth.kml+xml'});
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'clientes_geometrias.kml'; a.click(); URL.revokeObjectURL(a.href);
-    })
+    });
 
     // Init: cargar desde API (sincroniza con server)
     (async ()=>{
       let online = false;
       const badge = document.getElementById('apiStatusBadge');
-      const banner = document.getElementById('apiStatusBanner');
-      const statusEl = document.createElement('div');
-      statusEl.style.cssText = 'position:fixed;bottom:8px;right:8px;padding:6px 10px;border-radius:20px;font-size:12px;z-index:9999;color:#fff;background:#888';
-      statusEl.textContent = '🟡 Verificando API...';
-      document.body.appendChild(statusEl);
       try {
         online = await Promise.race([
           checkApiStatus(),
@@ -354,12 +346,6 @@
           badge.style.background = online ? '#2d5a27' : '#888';
           badge.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
         }
-        if (banner) {
-          banner.style.background = online ? '#2d5a27' : '#888';
-          banner.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
-        }
-        statusEl.style.background = online ? '#2d5a27' : '#888';
-        statusEl.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
 
         if (online) {
           await getClients(); // sincroniza cache local con servidor
@@ -372,12 +358,6 @@
           badge.style.background = '#888';
           badge.textContent = '🟡 Modo offline';
         }
-        if (banner) {
-          banner.style.background = '#888';
-          banner.textContent = '🟡 Modo offline';
-        }
-        statusEl.style.background = '#888';
-        statusEl.textContent = '🟡 Modo offline';
       }
       render();
     })();

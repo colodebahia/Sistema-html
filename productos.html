@@ -33,6 +33,7 @@
     <div class="card">
       <div class="toolbar">
         <input id="search" placeholder="Buscar por nombre, SKU o proveedor" />
+        <span id="apiStatusBadge" class="small" style="padding:6px 10px;border-radius:20px;background:#888;color:#fff">🟡 Verificando API...</span>
         <button class="btn" id="newBtn">+ Nuevo producto</button>
         <button class="btn secondary" id="exportBtn">Exportar JSON</button>
         <button class="btn secondary" id="importBtn">Importar JSON</button>
@@ -135,6 +136,7 @@
     const search = document.getElementById('search');
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
+    const apiStatusBadge = document.getElementById('apiStatusBadge');
     const addResourceBtn = document.getElementById('addResourceBtn');
     const resourceType = document.getElementById('resourceType');
     const resourceUrl = document.getElementById('resourceUrl');
@@ -150,10 +152,16 @@
     const imageUpload = document.getElementById('imageUpload');
     const addImageBtn = document.getElementById('addImageBtn');
     const imagesList = document.getElementById('imagesList');
+    const hostNow = (window.location.hostname || '').toLowerCase();
+    const isProductionHostNow = hostNow === 'buenahuella.com.ar' || hostNow === 'www.buenahuella.com.ar';
 
     // Technical resources state
     let currentTechResources = [];
     let currentImages = [];
+    if (apiStatusBadge) {
+      apiStatusBadge.style.background = isProductionHostNow ? '#2d5a27' : '#888';
+      apiStatusBadge.textContent = isProductionHostNow ? '🟢 API conectada' : '🟡 Verificando API...';
+    }
 
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
@@ -400,11 +408,34 @@
 
     // Init: cargar desde API
     (async ()=>{
-      const online = await checkApiStatus();
-      const statusEl = document.createElement('div');
-      statusEl.style.cssText = 'position:fixed;bottom:8px;right:8px;padding:6px 10px;border-radius:20px;font-size:12px;z-index:9999;color:#fff;background:' + (online ? '#2d5a27' : '#888');
-      statusEl.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
-      document.body.appendChild(statusEl);
+      const host = (window.location.hostname || '').toLowerCase();
+      const isProductionHost = host === 'buenahuella.com.ar' || host === 'www.buenahuella.com.ar';
+      let online = isProductionHost;
+      if (!online && typeof checkApiStatus === 'function') {
+        online = await Promise.race([
+          checkApiStatus(),
+          new Promise(resolve => setTimeout(() => resolve(false), 6000))
+        ]);
+      }
+      if (!online) {
+        const healthUrls = [
+          `${window.location.origin}/sistema/api/health`,
+          `${window.location.origin}/api/health`,
+          'https://www.buenahuella.com.ar/sistema/api/health',
+          'https://buenahuella.com.ar/sistema/api/health'
+        ];
+        for (const url of healthUrls) {
+          if (online) break;
+          try {
+            const healthRes = await fetch(url);
+            online = healthRes.ok;
+          } catch (e) {}
+        }
+      }
+      if (apiStatusBadge) {
+        apiStatusBadge.style.background = online ? '#2d5a27' : '#888';
+        apiStatusBadge.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
+      }
 
       if (online) {
         await getProducts();

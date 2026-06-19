@@ -5,9 +5,10 @@
 
 const API_HOST = window.location.hostname || 'localhost';
 const API_PROTOCOL = window.location.protocol === 'https:' ? 'https' : 'http';
+const IS_LOCAL = API_HOST === 'localhost' || API_HOST === '127.0.0.1';
 const DEFAULT_NODE_API = `${API_PROTOCOL}://${API_HOST}:3000/api`;
 const DEFAULT_PHP_API = `${window.location.origin}/sistema/api`;
-const API_URL = window.BUENA_API_URL || ((API_HOST === 'localhost' || API_HOST === '127.0.0.1') ? DEFAULT_NODE_API : DEFAULT_PHP_API);
+const API_URL = window.BUENA_API_URL || (IS_LOCAL ? 'http://localhost:8002/api' : DEFAULT_PHP_API);
 
 // ── Helpers ──────────────────────────────────────────────
 

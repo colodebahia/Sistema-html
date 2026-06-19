@@ -40,21 +40,29 @@
     .hero h2{font-size:18px}
     .card{padding:12px}
   }
+  #topbar-inner{max-width:1000px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  #topnav{display:flex;gap:8px;align-items:center;font-weight:600;flex-wrap:wrap}
+  #topnav a{color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none}
+  @media(max-width:720px){
+    #topbar-inner{flex-direction:column;align-items:stretch}
+    #topbar-inner h1{font-size:16px;text-align:center}
+    #topnav{justify-content:center}
+    #topnav a{flex:1 1 45%;text-align:center}
+  }
 </style>
 </head>
 <body>
-<header><h1>BUENA HUELLA SAS GESTION</h1></header>
-<header style="background:#075; color:#fff;padding:12px 16px">
-  <div style="max-width:1000px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px">
+<header id="topbar" style="background:#075; color:#fff;padding:12px 16px">
+  <div id="topbar-inner">
     <h1 style="margin:0;font-size:18px">BUENA HUELLA SAS GESTION</h1>
-    <nav style="display:flex;gap:8px;align-items:center;font-weight:600">
-      <a href="index.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Inicio</a>
-      <a href="clientes.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Clientes</a>
-      <a href="productos.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Productos</a>
-      <a href="presupuestos.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Presupuestos</a>
-      <a href="proyectos.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Proyectos</a>
-      <a href="proveedores.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Proveedores</a>
-      <a href="operarios.html" style="color:#ffffff;font-weight:600;padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.06);text-decoration:none">Operarios</a>
+    <nav id="topnav">
+      <a href="index.html">Inicio</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="productos.html">Productos</a>
+      <a href="presupuestos.html">Presupuestos</a>
+      <a href="proyectos.html">Proyectos</a>
+      <a href="proveedores.html">Proveedores</a>
+      <a href="operarios.html">Operarios</a>
     </nav>
   </div>
 </header>

@@ -33,7 +33,15 @@ try {
 
 function input_json() {
   $raw = file_get_contents('php://input');
-  return $raw ? json_decode($raw, true) : [];
+  if (!$raw) return [];
+  $decoded = json_decode($raw, true);
+  return is_array($decoded) ? $decoded : [];
+}
+
+// Campos auto-gestionados por MySQL que no deben insertarse manualmente
+function filter_db_fields(array $data): array {
+  $skip = ['createdAt', 'created_at', 'updated_at'];
+  return array_diff_key($data, array_flip($skip));
 }
 function send($data, $code = 200) {
   http_response_code($code);
@@ -82,13 +90,14 @@ if (($parts[0] ?? '') === 'sync' && ($parts[1] ?? '') === 'import' && $method ==
       $check = $pdo->prepare("SELECT id FROM {$r['table']} WHERE id = ?");
       $check->execute([$id]);
       if ($check->fetch()) {
-        $fields = array_keys($item);
+        $cleanItem = filter_db_fields($item);
+        $fields = array_keys($cleanItem);
         $sets = [];
         $vals = [];
         foreach ($fields as $f) {
           if ($f === 'id') continue;
           $sets[] = "$f = ?";
-          $v = in_array($f, $r['json_fields'], true) ? json_encode($item[$f], JSON_UNESCAPED_UNICODE) : $item[$f];
+          $v = in_array($f, $r['json_fields'], true) ? json_encode($cleanItem[$f], JSON_UNESCAPED_UNICODE) : $cleanItem[$f];
           $vals[] = $v;
         }
         if ($sets) {
@@ -97,12 +106,13 @@ if (($parts[0] ?? '') === 'sync' && ($parts[1] ?? '') === 'import' && $method ==
           $pdo->prepare($sql)->execute($vals);
         }
       } else {
-        $fields = array_keys($item);
+        $cleanItem = filter_db_fields($item);
+        $fields = array_keys($cleanItem);
         $cols = implode(',', $fields);
         $qs = implode(',', array_fill(0, count($fields), '?'));
         $vals = [];
         foreach ($fields as $f) {
-          $vals[] = in_array($f, $r['json_fields'], true) ? json_encode($item[$f], JSON_UNESCAPED_UNICODE) : $item[$f];
+          $vals[] = in_array($f, $r['json_fields'], true) ? json_encode($cleanItem[$f], JSON_UNESCAPED_UNICODE) : $cleanItem[$f];
         }
         $pdo->prepare("INSERT INTO {$r['table']} ($cols) VALUES ($qs)")->execute($vals);
       }
@@ -129,8 +139,9 @@ if ($method === 'GET' && !$id) {
 }
 
 if ($method === 'POST' && !$id) {
-  $data = input_json();
-  if (empty($data['id'])) send(['error' => 'id requerido'], 400);
+  $raw = input_json();
+  if (empty($raw['id'])) send(['error' => 'id requerido'], 400);
+  $data = filter_db_fields($raw);
   $fields = array_keys($data);
   $cols = implode(',', $fields);
   $qs = implode(',', array_fill(0, count($fields), '?'));
@@ -138,12 +149,17 @@ if ($method === 'POST' && !$id) {
   foreach ($fields as $f) {
     $vals[] = in_array($f, $jsonFields, true) ? json_encode($data[$f], JSON_UNESCAPED_UNICODE) : $data[$f];
   }
-  $pdo->prepare("INSERT INTO $table ($cols) VALUES ($qs)")->execute($vals);
-  send($data, 201);
+  try {
+    $pdo->prepare("INSERT INTO $table ($cols) VALUES ($qs)")->execute($vals);
+  } catch (Throwable $e) {
+    send(['error' => 'Error al guardar: ' . $e->getMessage()], 500);
+  }
+  send($raw, 201);
 }
 
 if ($method === 'PUT' && $id) {
-  $data = input_json();
+  $raw = input_json();
+  $data = filter_db_fields($raw);
   $fields = array_keys($data);
   $sets = [];
   $vals = [];
@@ -154,7 +170,11 @@ if ($method === 'PUT' && $id) {
   }
   if (!$sets) send(['error' => 'sin cambios'], 400);
   $vals[] = $id;
-  $pdo->prepare("UPDATE $table SET " . implode(',', $sets) . " WHERE id = ?")->execute($vals);
+  try {
+    $pdo->prepare("UPDATE $table SET " . implode(',', $sets) . " WHERE id = ?")->execute($vals);
+  } catch (Throwable $e) {
+    send(['error' => 'Error al actualizar: ' . $e->getMessage()], 500);
+  }
   send(['success' => true]);
 }
 

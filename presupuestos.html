@@ -20,6 +20,13 @@
     .layout{display:grid;grid-template-columns:1fr 320px;gap:12px}
     @media(max-width:900px){.layout{grid-template-columns:1fr}}
     select{min-width:150px;font-size:16px}
+    #topActions{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
+    #topActions #clientSelect{flex:1;min-width:220px}
+    @media(max-width:720px){
+      #topActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      #topActions #clientSelect{grid-column:1 / -1;min-width:0;width:100%}
+      #topActions .btn{width:100%;min-height:42px}
+    }
   </style>
 </head>
 <body>
@@ -27,9 +34,12 @@
   <div class="wrap">
     <div class="card layout">
       <div>
-        <div class="no-print" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
-          <select id="clientSelect" style="flex:1;min-width:180px"><option value="">-- Seleccionar cliente --</option></select>
+        <div id="topActions" class="no-print">
+          <select id="clientSelect"><option value="">-- Seleccionar cliente --</option></select>
+          <select id="productSelect"><option value="">-- Seleccionar producto --</option></select>
+          <span id="apiStatusBadge" style="padding:6px 10px;border-radius:20px;background:#888;color:#fff;font-size:13px">🟡 Verificando API...</span>
           <button class="btn" id="newClientBtn">Nuevo</button>
+          <button class="btn secondary" id="loadProductBtn">Cargar producto</button>
           <button class="btn secondary" id="loadClientBtn">Cargar</button>
           <button class="btn" id="printBtn">PDF</button>
           <button class="btn secondary" id="saveBudgetBtn">Guardar</button>
@@ -83,23 +93,124 @@
     <p style="margin-top:10px" class="no-print">Volver al <a href="index.html">inicio</a></p>
   </div>
 
+  <script src="js/api.js"></script>
   <script>
-    const CLIENTS_KEY = 'buena_clients_v1';
-    const BUDGETS_KEY = 'buena_presupuestos_v1';
-    function readClients(){try{return JSON.parse(localStorage.getItem(CLIENTS_KEY)||'[]')}catch(e){return[]}}
-    function readBudgets(){try{return JSON.parse(localStorage.getItem(BUDGETS_KEY)||'[]')}catch(e){return[]}}
-    function saveBudgets(list){localStorage.setItem(BUDGETS_KEY,JSON.stringify(list))}
+    const CLIENTS_STORAGE_KEY = 'buena_clients_v1';
+    const PRODUCTS_STORAGE_KEY = 'buena_products_v1';
+    const BUDGETS_STORAGE_KEY = 'buena_presupuestos_v1';
+    const apiStatusBadge = document.getElementById('apiStatusBadge');
+    function readClients(){
+      if (typeof localReadClients === 'function') return localReadClients();
+      try{return JSON.parse(localStorage.getItem(CLIENTS_STORAGE_KEY)||'[]')}catch(e){return[]}
+    }
+    function readProducts(){
+      if (typeof localReadProducts === 'function') return localReadProducts();
+      try{return JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)||'[]')}catch(e){return[]}
+    }
+    function readBudgets(){try{return JSON.parse(localStorage.getItem(BUDGETS_STORAGE_KEY)||'[]')}catch(e){return[]}}
+    function saveBudgets(list){localStorage.setItem(BUDGETS_STORAGE_KEY,JSON.stringify(list))}
 
     const clientSelect = document.getElementById('clientSelect');
+    const productSelect = document.getElementById('productSelect');
     const historyList = document.getElementById('historyList');
 
     function populateClients(){ const cl = readClients(); clientSelect.innerHTML = '<option value="">-- Seleccionar cliente --</option>'; for(const c of cl){ const opt = document.createElement('option'); opt.value=c.id; opt.textContent=c.name; clientSelect.appendChild(opt)} }
+    function populateProducts(){
+      const products = readProducts();
+      productSelect.innerHTML = '<option value="">-- Seleccionar producto --</option>';
+      for(const p of products){
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        const usd = Number(p.priceUsd || 0).toFixed(2);
+        const descText = (p.description || p.name || 'Sin descripción').trim();
+        opt.textContent = `${p.sku ? p.sku + ' - ' : ''}${descText} (USD ${usd})`;
+        productSelect.appendChild(opt);
+      }
+    }
     function renderHistory(){ const list = readBudgets(); if(!list.length){ historyList.innerHTML = '<p class="small">No hay presupuestos guardados.</p>'; return } historyList.innerHTML = ''; for(const b of list.slice().reverse()){ const el = document.createElement('div'); el.style.border='1px solid #eee'; el.style.padding='6px'; el.style.marginBottom='6px'; el.innerHTML = `<strong>${escapeHtml(b.clientName||'Sin cliente')}</strong><br><small>${new Date(b.at).toLocaleString()}</small><div style="margin-top:6px"><button class="btn" data-id="${b.id}" data-action="load">Cargar</button> <button class="btn secondary" data-id="${b.id}" data-action="download">Descargar</button> <button class="btn secondary" data-id="${b.id}" data-action="delete">Borrar</button></div>`; historyList.appendChild(el) }
     }
 
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-    populateClients(); renderHistory();
+    async function syncClientsForSelect(){
+      let loaded = false;
+      if (typeof getClients === 'function') {
+        try {
+          const data = await getClients();
+          loaded = Array.isArray(data) && data.length > 0;
+        } catch(e) {}
+      }
+      // Fallback extra: llamada directa al endpoint PHP
+      if (!loaded) {
+        try {
+          const apiBase = window.location.pathname.includes('/sistema/')
+            ? `${window.location.origin}/sistema/api`
+            : `${window.location.origin}/api`;
+          const res = await fetch(`${apiBase}/clients`);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(data));
+              loaded = data.length > 0;
+            }
+          }
+        } catch(e) {}
+      }
+      return loaded;
+    }
+
+    async function syncProductsForSelect(){
+      let loaded = false;
+      if (typeof getProducts === 'function') {
+        try {
+          const data = await getProducts();
+          loaded = Array.isArray(data) && data.length > 0;
+        } catch(e) {}
+      }
+      if (!loaded) {
+        try {
+          const apiBase = window.location.pathname.includes('/sistema/')
+            ? `${window.location.origin}/sistema/api`
+            : `${window.location.origin}/api`;
+          const res = await fetch(`${apiBase}/products`);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(data));
+              loaded = data.length > 0;
+            }
+          }
+        } catch(e) {}
+      }
+      return loaded;
+    }
+
+    (async ()=>{
+      const online = (typeof checkApiStatus === 'function')
+        ? await Promise.race([
+            checkApiStatus(),
+            new Promise(resolve => setTimeout(() => resolve(false), 6000))
+          ])
+        : false;
+      if (apiStatusBadge) {
+        apiStatusBadge.style.background = online ? '#2d5a27' : '#888';
+        apiStatusBadge.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
+      }
+      await syncClientsForSelect();
+      await syncProductsForSelect();
+      populateClients();
+      populateProducts();
+      renderHistory();
+    })();
+
+    document.getElementById('loadProductBtn').addEventListener('click',()=>{
+      const id = productSelect.value;
+      if(!id) return alert('Seleccioná un producto');
+      const p = readProducts().find(x=>x.id===id);
+      if(!p) return alert('Producto no encontrado');
+      document.getElementById('desc').value = (p.description || p.name || '').trim();
+      document.getElementById('unitUsd').value = Number(p.priceUsd || 0).toFixed(2);
+    });
 
     // Listeners para recalcular IVA
     document.getElementById('ivaPct').addEventListener('change', recalcTotals);
