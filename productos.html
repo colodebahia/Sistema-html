@@ -164,6 +164,10 @@
     }
 
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    function toNumber(v){
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
     function normText(s){
       const raw = String(s || '').toLowerCase().trim();
       if (!raw) return '';
@@ -310,7 +314,7 @@
         const techBtn = techCount > 0 ? `<button type="button" data-sku="${p.sku}" data-name="${p.name}" class="btn secondary view-resources" style="font-size:12px">📚 ${techCount}</button>` : '—';
         const photoCount = (p.images || []).length;
         const photoBtn = photoCount > 0 ? `<button type="button" data-sku="${p.sku}" data-name="${p.name}" class="btn secondary view-images" style="font-size:12px;background:#0066cc">📷 ${photoCount}</button>` : '—';
-        tr.innerHTML = `<td>${photoBtn}</td><td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.name||'')}</td><td>${(p.priceUsd||0).toFixed(2)}</td><td>${(p.priceArs||0).toFixed(2)}</td><td>${p.stock||0}</td><td>${techBtn}</td><td class="actions"><button data-id="${p.id}" class="btn secondary edit">Editar</button><button data-id="${p.id}" class="btn secondary del">Borrar</button></td>`;
+        tr.innerHTML = `<td>${photoBtn}</td><td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.name||'')}</td><td>${toNumber(p.priceUsd).toFixed(2)}</td><td>${toNumber(p.priceArs).toFixed(2)}</td><td>${toNumber(p.stock)}</td><td>${techBtn}</td><td class="actions"><button data-id="${p.id}" class="btn secondary edit">Editar</button><button data-id="${p.id}" class="btn secondary del">Borrar</button></td>`;
         tableBody.appendChild(tr);
       }
       // Attach event listeners to resource buttons
