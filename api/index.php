@@ -43,6 +43,14 @@ function filter_db_fields(array $data): array {
   $skip = ['createdAt', 'created_at', 'updated_at'];
   return array_diff_key($data, array_flip($skip));
 }
+function normalize_resource_data(string $resource, array $data): array {
+  // Evita choques con índice UNIQUE cuando SKU viene vacío desde el frontend.
+  if (($resource === 'products' || $resource === 'components') && array_key_exists('sku', $data)) {
+    $sku = trim((string)$data['sku']);
+    $data['sku'] = $sku === '' ? null : $sku;
+  }
+  return $data;
+}
 function send($data, $code = 200) {
   http_response_code($code);
   echo json_encode($data, JSON_UNESCAPED_UNICODE);
@@ -90,7 +98,7 @@ if (($parts[0] ?? '') === 'sync' && ($parts[1] ?? '') === 'import' && $method ==
       $check = $pdo->prepare("SELECT id FROM {$r['table']} WHERE id = ?");
       $check->execute([$id]);
       if ($check->fetch()) {
-        $cleanItem = filter_db_fields($item);
+        $cleanItem = normalize_resource_data($key, filter_db_fields($item));
         $fields = array_keys($cleanItem);
         $sets = [];
         $vals = [];
@@ -106,7 +114,7 @@ if (($parts[0] ?? '') === 'sync' && ($parts[1] ?? '') === 'import' && $method ==
           $pdo->prepare($sql)->execute($vals);
         }
       } else {
-        $cleanItem = filter_db_fields($item);
+        $cleanItem = normalize_resource_data($key, filter_db_fields($item));
         $fields = array_keys($cleanItem);
         $cols = implode(',', $fields);
         $qs = implode(',', array_fill(0, count($fields), '?'));
@@ -141,7 +149,7 @@ if ($method === 'GET' && !$id) {
 if ($method === 'POST' && !$id) {
   $raw = input_json();
   if (empty($raw['id'])) send(['error' => 'id requerido'], 400);
-  $data = filter_db_fields($raw);
+  $data = normalize_resource_data($resource, filter_db_fields($raw));
   $fields = array_keys($data);
   $cols = implode(',', $fields);
   $qs = implode(',', array_fill(0, count($fields), '?'));
@@ -159,7 +167,7 @@ if ($method === 'POST' && !$id) {
 
 if ($method === 'PUT' && $id) {
   $raw = input_json();
-  $data = filter_db_fields($raw);
+  $data = normalize_resource_data($resource, filter_db_fields($raw));
   $fields = array_keys($data);
   $sets = [];
   $vals = [];
@@ -185,4 +193,3 @@ if ($method === 'DELETE' && $id) {
 }
 
 send(['error' => 'Método no permitido'], 405);
-
