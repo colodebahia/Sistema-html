@@ -164,6 +164,13 @@
     }
 
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    function normText(s){
+      return String(s || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+    }
 
     function renderTechResources(){
       techResourcesList.innerHTML = '';
@@ -280,15 +287,22 @@
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
     function render(filter){
-      const q = (filter||'').toLowerCase();
+      const q = normText(filter);
       const products = readProducts().filter(p=>{
         if(!q) return true;
-        return (p.name||'').toLowerCase().includes(q)
-          || (p.sku||'').toLowerCase().includes(q)
-          || (p.description||'').toLowerCase().includes(q)
-          || (p.supplier||'').toLowerCase().includes(q)
+        const haystack = normText([
+          p.name,
+          p.sku,
+          p.description,
+          p.supplier,
+          p.id
+        ].join(' '));
+        return haystack.includes(q);
       });
       tableBody.innerHTML = '';
+      if (!products.length) {
+        tableBody.innerHTML = '<tr><td colspan="8" class="small">Sin resultados</td></tr>';
+      }
       for(const p of products){
         const tr = document.createElement('tr');
         const techCount = (p.technicalInfo || []).length;
