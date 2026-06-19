@@ -32,7 +32,7 @@
   <div class="wrap">
     <div class="card">
       <div class="toolbar">
-        <input id="search" placeholder="Buscar por nombre, SKU o proveedor" />
+        <input id="search" placeholder="Buscar por nombre, SKU, descripción o proveedor" />
         <span id="apiStatusBadge" class="small" style="padding:6px 10px;border-radius:20px;background:#888;color:#fff">🟡 Verificando API...</span>
         <button class="btn" id="newBtn">+ Nuevo producto</button>
         <button class="btn secondary" id="exportBtn">Exportar JSON</button>
@@ -283,7 +283,10 @@
       const q = (filter||'').toLowerCase();
       const products = readProducts().filter(p=>{
         if(!q) return true;
-        return (p.name||'').toLowerCase().includes(q) || (p.sku||'').toLowerCase().includes(q) || (p.supplier||'').toLowerCase().includes(q)
+        return (p.name||'').toLowerCase().includes(q)
+          || (p.sku||'').toLowerCase().includes(q)
+          || (p.description||'').toLowerCase().includes(q)
+          || (p.supplier||'').toLowerCase().includes(q)
       });
       tableBody.innerHTML = '';
       for(const p of products){
