@@ -379,9 +379,14 @@
       };
       const existing = readProducts().find(x=>x.id===id);
       if(existing) product.createdAt = existing.createdAt;
-      await saveProduct(product);
-      form.reset(); document.getElementById('productId').value=''; currentTechResources=[]; currentImages=[]; renderTechResources(); renderImagesList(); render();
-      alert('Producto guardado');
+      try {
+        await saveProduct(product);
+        form.reset(); document.getElementById('productId').value=''; currentTechResources=[]; currentImages=[]; renderTechResources(); renderImagesList(); render();
+        alert('✅ Producto guardado');
+      } catch(err) {
+        render(); // mostrar igual (guardado local)
+        alert('⚠️ Guardado solo localmente. Error API: ' + err.message);
+      }
     })
 
     newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; currentImages = []; renderTechResources(); renderImagesList(); resourceUrl.value=''; imageUpload.value=''; window.scrollTo({top:0,behavior:'smooth'})})

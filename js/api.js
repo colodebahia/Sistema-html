@@ -93,6 +93,7 @@ async function getProducts() {
 
 async function saveProduct(product) {
   const existing = localReadProducts().find(x => x.id === product.id);
+  let apiError = null;
   try {
     if (existing) {
       await apiFetch('PUT', `/products/${product.id}`, product);
@@ -100,10 +101,12 @@ async function saveProduct(product) {
       await apiFetch('POST', '/products', product);
     }
   } catch (e) {
+    apiError = e.message;
     console.warn('API no disponible:', e.message);
   }
   const list = localReadProducts().filter(x => x.id !== product.id).concat([product]);
   localSaveProducts(list);
+  if (apiError) throw new Error(apiError);
 }
 
 async function deleteProduct(id) {
