@@ -165,11 +165,12 @@
 
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
     function normText(s){
-      return String(s || '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .trim();
+      const raw = String(s || '').toLowerCase().trim();
+      if (!raw) return '';
+      if (typeof raw.normalize === 'function') {
+        return raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
+      return raw;
     }
 
     function renderTechResources(){
@@ -409,6 +410,7 @@
     newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; currentImages = []; renderTechResources(); renderImagesList(); resourceUrl.value=''; imageUpload.value=''; window.scrollTo({top:0,behavior:'smooth'})})
     cancelBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; currentImages = []; renderTechResources(); renderImagesList(); resourceUrl.value=''; imageUpload.value='';})
     search.addEventListener('input',e=>render(e.target.value))
+    search.addEventListener('keyup',e=>render(e.target.value))
 
     exportBtn.addEventListener('click',()=>{
       const data = JSON.stringify(localReadProducts());
