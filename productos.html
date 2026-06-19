@@ -10,9 +10,11 @@
     .wrap{max-width:1100px;margin:16px auto;padding:12px}
     .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06);}
     .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+    .toolbar input{flex:1 1 280px;min-width:200px}
     input,select,textarea{padding:8px;border:1px solid #ddd;border-radius:6px;width:100%;box-sizing:border-box}
     .grid{display:grid;grid-template-columns:1fr 360px;gap:12px}
-    table{width:100%;border-collapse:collapse}
+    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    table{width:100%;border-collapse:collapse;min-width:760px}
     th,td{padding:8px;border-bottom:1px solid #eee;text-align:left;font-size:13px}
     .actions button{margin-right:6px}
     @media(max-width:900px){.grid{grid-template-columns:1fr}}
@@ -24,7 +26,20 @@
     .btn.secondary:hover{background:#ddd}
     .hide{display:none}
     .two-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    @media(max-width:600px){.two-cols{grid-template-columns:1fr}}
+    @media(max-width:600px){
+      header{padding:12px}
+      header h1{font-size:20px;margin:0}
+      .wrap{margin:8px auto;padding:8px}
+      .card{padding:10px}
+      .toolbar{gap:6px}
+      .toolbar input,.toolbar .btn,.toolbar .small{width:100%}
+      .toolbar .small{text-align:center}
+      .btn{padding:10px}
+      th,td{font-size:12px;padding:7px}
+      .actions{display:flex;flex-direction:column;gap:6px}
+      .actions button{margin-right:0;width:100%}
+      .two-cols{grid-template-columns:1fr}
+    }
   </style>
 </head>
 <body>
@@ -40,10 +55,12 @@
       </div>
       <div class="grid">
         <div>
-          <table id="productsTable">
-            <thead><tr><th>Foto</th><th>SKU</th><th>Nombre</th><th>Precio USD</th><th>Precio ARS</th><th>Stock</th><th>Soporte</th><th></th></tr></thead>
-            <tbody></tbody>
-          </table>
+          <div class="table-wrap">
+            <table id="productsTable">
+              <thead><tr><th>Foto</th><th>SKU</th><th>Nombre</th><th>Precio USD</th><th>Precio ARS</th><th>Stock</th><th>Soporte</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
           <div id="imageModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999;padding:20px;overflow-y:auto">
             <div style="background:#fff;max-width:600px;margin:40px auto;border-radius:8px;padding:20px">
               <h3 id="imageModalTitle">Imágenes</h3>
