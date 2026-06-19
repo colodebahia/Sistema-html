@@ -8,14 +8,43 @@ const API_PROTOCOL = window.location.protocol === 'https:' ? 'https' : 'http';
 const IS_LOCAL = API_HOST === 'localhost' || API_HOST === '127.0.0.1';
 const DEFAULT_NODE_API = `${API_PROTOCOL}://${API_HOST}:3000/api`;
 const DEFAULT_PHP_API = `${window.location.origin}/sistema/api`;
-const API_URL = window.BUENA_API_URL || (IS_LOCAL ? 'http://localhost:8002/api' : DEFAULT_PHP_API);
+const API_CANDIDATES = window.BUENA_API_URL
+  ? [window.BUENA_API_URL]
+  : (IS_LOCAL
+    ? [`${window.location.origin}/sistema/api`, `${window.location.origin}/api`, 'https://www.buenahuella.com.ar/sistema/api']
+    : [DEFAULT_PHP_API, `${window.location.origin}/api`]);
+let ACTIVE_API_URL = API_CANDIDATES[0];
+let API_DISCOVERED = false;
+
+async function discoverApiUrl() {
+  if (API_DISCOVERED) return ACTIVE_API_URL;
+  for (const base of API_CANDIDATES) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    try {
+      const res = await fetch(`${base}/health`, { method: 'GET', signal: controller.signal });
+      if (res.ok) {
+        ACTIVE_API_URL = base;
+        API_DISCOVERED = true;
+        return ACTIVE_API_URL;
+      }
+    } catch {
+      // Probar siguiente candidato
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+  API_DISCOVERED = true;
+  return ACTIVE_API_URL;
+}
 
 // ── Helpers ──────────────────────────────────────────────
 
 async function apiFetch(method, endpoint, body) {
+  const baseUrl = await discoverApiUrl();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);
-  const res = await fetch(`${API_URL}${endpoint}`, {
+  const res = await fetch(`${baseUrl}${endpoint}`, {
     method,
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
