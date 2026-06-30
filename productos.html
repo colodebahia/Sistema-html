@@ -4,9 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Productos - Buena Huella</title>
+  <script src="js/auth.js"></script>
   <style>
     body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f5f5f5}
     header{background:#2d5a27;color:#fff;padding:14px;text-align:center}
+    .brand{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+    .brand img{width:42px;height:42px;object-fit:cover;border-radius:8px;background:#fff}
     .wrap{max-width:1100px;margin:16px auto;padding:12px}
     .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06);}
     .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
@@ -14,6 +17,7 @@
     input,select,textarea{padding:8px;border:1px solid #ddd;border-radius:6px;width:100%;box-sizing:border-box}
     .grid{display:grid;grid-template-columns:1fr 360px;gap:12px}
     .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .mobile-products{display:none}
     table{width:100%;border-collapse:collapse;min-width:760px}
     th,td{padding:8px;border-bottom:1px solid #eee;text-align:left;font-size:13px}
     .actions button{margin-right:6px}
@@ -29,26 +33,45 @@
     @media(max-width:600px){
       header{padding:12px}
       header h1{font-size:20px;margin:0}
+      .brand{gap:8px}
       .wrap{margin:8px auto;padding:8px}
       .card{padding:10px}
       .toolbar{gap:6px}
       .toolbar input,.toolbar .btn,.toolbar .small{width:100%}
       .toolbar .small{text-align:center}
       .btn{padding:10px}
-      th,td{font-size:12px;padding:7px}
-      .actions{display:flex;flex-direction:column;gap:6px}
-      .actions button{margin-right:0;width:100%}
+      .table-wrap{overflow-x:hidden}
+      .mobile-products{display:block}
+      .table-wrap{display:none}
+      table{min-width:0;table-layout:fixed}
+      th,td{font-size:12px;padding:7px;word-break:break-word}
+      th:nth-child(4),td:nth-child(4),
+      th:nth-child(5),td:nth-child(5),
+      th:nth-child(6),td:nth-child(6),
+      th:nth-child(7),td:nth-child(7){display:none}
+      th:nth-child(1),td:nth-child(1){width:48px}
+      th:nth-child(2),td:nth-child(2){width:72px}
+      th:nth-child(3),td:nth-child(3){width:auto}
+      th:nth-child(8),td:nth-child(8){width:92px}
+      td.actions{display:flex;flex-direction:column;gap:6px}
+      td.actions button{margin-right:0;width:100%}
       .two-cols{grid-template-columns:1fr}
     }
   </style>
 </head>
 <body>
-  <header><h1>Productos — Buena Huella</h1></header>
+  <header>
+    <div class="brand">
+      <img src="logo.jpg" alt="Logo Buena Huella">
+      <h1>Productos — Buena Huella</h1>
+    </div>
+  </header>
   <div class="wrap">
     <div class="card">
       <div class="toolbar">
         <input id="search" placeholder="Buscar por nombre, SKU, descripción o proveedor" />
         <span id="apiStatusBadge" class="small" style="padding:6px 10px;border-radius:20px;background:#888;color:#fff">🟡 Verificando API...</span>
+        <button class="btn secondary" id="ordersBtn">Órdenes de compra</button>
         <button class="btn" id="newBtn">+ Nuevo producto</button>
         <button class="btn secondary" id="exportBtn">Exportar JSON</button>
         <button class="btn secondary" id="importBtn">Importar JSON</button>
@@ -61,6 +84,7 @@
               <tbody></tbody>
             </table>
           </div>
+          <div id="mobileProductsList" class="mobile-products"></div>
           <div id="imageModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999;padding:20px;overflow-y:auto">
             <div style="background:#fff;max-width:600px;margin:40px auto;border-radius:8px;padding:20px">
               <h3 id="imageModalTitle">Imágenes</h3>
@@ -89,14 +113,45 @@
               <textarea id="description" rows="3"></textarea>
               <label class="label">Proveedor</label>
               <input id="supplier" />
+              <label class="label">🔢 Cálculo de Precios</label>
               <div class="two-cols">
                 <div>
-                  <label class="label">Precio USD</label>
-                  <input id="priceUsd" type="number" step="0.01" />
+                  <label class="label">Precio Proveedor USD *</label>
+                  <input id="supplierPriceUsd" type="number" step="0.01" value="0" required />
                 </div>
                 <div>
-                  <label class="label">Precio ARS</label>
-                  <input id="priceArs" type="number" step="0.01" />
+                  <label class="label">Costo Flete USD</label>
+                  <input id="shippingCostUsd" type="number" step="0.01" value="0" />
+                </div>
+              </div>
+              <div class="two-cols">
+                <div>
+                  <label class="label">Margen Bruto %</label>
+                  <input id="marginPct" type="number" step="0.1" min="0" max="100" value="30" />
+                </div>
+                <div>
+                  <label class="label">Costo Total USD</label>
+                  <div id="costTotalUsd" style="padding:8px;background:#f9f9f9;border-radius:6px;border:1px solid #ddd;font-weight:bold;color:#333">$0.00</div>
+                </div>
+              </div>
+              <div class="two-cols">
+                <div>
+                  <label class="label">IVA %</label>
+                  <input id="ivaPct" type="number" step="0.1" min="0" value="21" />
+                </div>
+                <div>
+                  <label class="label">IVA de referencia</label>
+                  <div id="ivaPctPreview" style="padding:8px;background:#f9f9f9;border-radius:6px;border:1px solid #ddd;font-weight:bold;color:#333">21%</div>
+                </div>
+              </div>
+              <div class="two-cols">
+                <div>
+                  <label class="label">Precio Venta USD (sin IVA)</label>
+                  <div id="priceSaleUsd" style="padding:8px;background:#e8f5e9;border-radius:6px;border:2px solid #4caf50;font-weight:bold;color:#2e7d32;font-size:16px">$0.00</div>
+                </div>
+                <div>
+                  <label class="label">Precio ARS (referencia)</label>
+                  <input id="priceArs" type="number" step="0.01" value="0" placeholder="Referencia" />
                 </div>
               </div>
               <div class="two-cols">
@@ -138,7 +193,7 @@
     <p style="margin-top:10px" class="small">Volver al <a href="index.html">inicio</a></p>
   </div>
 
-  <script src="js/api.js?v=20260619-2"></script>
+  <script src="js/api.js?v=20260619-6"></script>
   <script>
     // Storage: usa api.js (API + localStorage fallback)
     function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
@@ -147,12 +202,14 @@
 
     // DOM refs
     const tableBody = document.querySelector('#productsTable tbody');
+    const mobileProductsList = document.getElementById('mobileProductsList');
     const form = document.getElementById('productForm');
     const newBtn = document.getElementById('newBtn');
     const cancelBtn = document.getElementById('cancelBtn');
     const search = document.getElementById('search');
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
+    const ordersBtn = document.getElementById('ordersBtn');
     const apiStatusBadge = document.getElementById('apiStatusBadge');
     const addResourceBtn = document.getElementById('addResourceBtn');
     const resourceType = document.getElementById('resourceType');
@@ -169,6 +226,13 @@
     const imageUpload = document.getElementById('imageUpload');
     const addImageBtn = document.getElementById('addImageBtn');
     const imagesList = document.getElementById('imagesList');
+    const supplierPriceUsdEl = document.getElementById('supplierPriceUsd');
+    const shippingCostUsdEl = document.getElementById('shippingCostUsd');
+    const marginPctEl = document.getElementById('marginPct');
+    const ivaPctEl = document.getElementById('ivaPct');
+    const ivaPctPreviewEl = document.getElementById('ivaPctPreview');
+    const costTotalUsdEl = document.getElementById('costTotalUsd');
+    const priceSaleUsdEl = document.getElementById('priceSaleUsd');
     const hostNow = (window.location.hostname || '').toLowerCase();
     const isProductionHostNow = hostNow === 'buenahuella.com.ar' || hostNow === 'www.buenahuella.com.ar';
 
@@ -180,6 +244,25 @@
       apiStatusBadge.textContent = isProductionHostNow ? '🟢 API conectada' : '🟡 Verificando API...';
     }
 
+    function updatePriceCalculations() {
+      const supplierPrice = parseFloat(supplierPriceUsdEl.value) || 0;
+      const shippingCost = parseFloat(shippingCostUsdEl.value) || 0;
+      const parsedMargin = parseFloat(marginPctEl.value);
+      const margin = Number.isFinite(parsedMargin) ? parsedMargin : 30;
+      const parsedIva = parseFloat(ivaPctEl.value);
+      const iva = Number.isFinite(parsedIva) ? parsedIva : 21;
+
+      const costTotal = supplierPrice + shippingCost;
+      const marginDecimal = margin / 100;
+      const priceSale = marginDecimal >= 1 ? costTotal * 2 : costTotal / (1 - marginDecimal);
+
+      costTotalUsdEl.textContent = '$' + costTotal.toFixed(2);
+      priceSaleUsdEl.textContent = '$' + priceSale.toFixed(2);
+      if (ivaPctPreviewEl) {
+        ivaPctPreviewEl.textContent = iva.toFixed(1).replace(/\.0$/, '') + '%';
+      }
+    }
+
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
     function toNumber(v){
       const n = Number(v);
@@ -188,10 +271,10 @@
     function normText(s){
       const raw = String(s || '').toLowerCase().trim();
       if (!raw) return '';
-      if (typeof raw.normalize === 'function') {
-        return raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      }
-      return raw;
+      const base = (typeof raw.normalize === 'function')
+        ? raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        : raw;
+      return base.replace(/\s+/g, ' ');
     }
 
     function renderTechResources(){
@@ -306,24 +389,27 @@
       reader.readAsDataURL(file);
     })
 
-    function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
     function render(filter){
       const q = normText(filter);
+      const tokens = q ? q.split(' ').filter(Boolean) : [];
       const products = readProducts().filter(p=>{
-        if(!q) return true;
+        if(!tokens.length) return true;
         const haystack = normText([
           p.name,
           p.sku,
           p.description,
           p.supplier,
-          p.id
+          p.id,
+          JSON.stringify(p || {})
         ].join(' '));
-        return haystack.includes(q);
+        return tokens.every(t => haystack.includes(t));
       });
       tableBody.innerHTML = '';
+      if (mobileProductsList) mobileProductsList.innerHTML = '';
       if (!products.length) {
         tableBody.innerHTML = '<tr><td colspan="8" class="small">Sin resultados</td></tr>';
+        if (mobileProductsList) mobileProductsList.innerHTML = '<div style="padding:12px;color:#666;font-size:13px">Sin resultados</div>';
       }
       for(const p of products){
         const tr = document.createElement('tr');
@@ -331,8 +417,38 @@
         const techBtn = techCount > 0 ? `<button type="button" data-sku="${p.sku}" data-name="${p.name}" class="btn secondary view-resources" style="font-size:12px">📚 ${techCount}</button>` : '—';
         const photoCount = (p.images || []).length;
         const photoBtn = photoCount > 0 ? `<button type="button" data-sku="${p.sku}" data-name="${p.name}" class="btn secondary view-images" style="font-size:12px;background:#0066cc">📷 ${photoCount}</button>` : '—';
-        tr.innerHTML = `<td>${photoBtn}</td><td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.name||'')}</td><td>${toNumber(p.priceUsd).toFixed(2)}</td><td>${toNumber(p.priceArs).toFixed(2)}</td><td>${toNumber(p.stock)}</td><td>${techBtn}</td><td class="actions"><button data-id="${p.id}" class="btn secondary edit">Editar</button><button data-id="${p.id}" class="btn secondary del">Borrar</button></td>`;
+        tr.innerHTML = `<td>${photoBtn}</td><td>${escapeHtml(p.sku||'')}</td><td>${escapeHtml(p.name||'')}</td><td>${toNumber(p.priceUsd).toFixed(2)}</td><td>${toNumber(p.priceArs).toFixed(2)}</td><td>${toNumber(p.stock)}</td><td>${techBtn}</td><td class="actions"><button data-id="${p.id}" class="btn secondary order">OC</button><button data-id="${p.id}" class="btn secondary export-component">Comp</button><button data-id="${p.id}" class="btn secondary edit">Editar</button><button data-id="${p.id}" class="btn secondary del">Borrar</button></td>`;
         tableBody.appendChild(tr);
+
+        if (mobileProductsList) {
+          const card = document.createElement('div');
+          card.style.cssText = 'background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.04)';
+          card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+              <div style="min-width:0">
+                <div style="font-size:12px;color:#666">${escapeHtml(p.sku || 'Sin SKU')}</div>
+                <div style="font-size:16px;font-weight:700;line-height:1.2;margin:2px 0">${escapeHtml(p.name || 'Sin nombre')}</div>
+                <div style="font-size:13px;color:#555;line-height:1.35">${escapeHtml((p.description || '').trim() || 'Sin descripción')}</div>
+              </div>
+              <div style="text-align:right;flex:0 0 auto">
+                <div style="font-size:12px;color:#666">Stock</div>
+                <div style="font-size:18px;font-weight:700">${toNumber(p.stock)}</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:13px">
+              <div><strong>USD:</strong> ${toNumber(p.priceUsd).toFixed(2)}</div>
+              <div><strong>ARS:</strong> ${toNumber(p.priceArs).toFixed(2)}</div>
+              <div><strong>Fotos:</strong> ${photoCount}</div>
+              <div><strong>Soporte:</strong> ${techCount}</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button type="button" data-id="${p.id}" class="btn secondary order" style="flex:1">OC</button>
+              <button type="button" data-id="${p.id}" class="btn secondary export-component" style="flex:1">Comp</button>
+              <button type="button" data-id="${p.id}" class="btn secondary edit" style="flex:1">Editar</button>
+              <button type="button" data-id="${p.id}" class="btn secondary del" style="flex:1">Borrar</button>
+            </div>`;
+          mobileProductsList.appendChild(card);
+        }
       }
       // Attach event listeners to resource buttons
       document.querySelectorAll('.view-resources').forEach(btn=>{
@@ -356,6 +472,8 @@
 
     tableBody.addEventListener('click',e=>{
       const id = e.target.getAttribute('data-id');
+      if(e.target.classList.contains('order')){openOrder(id)}
+      if(e.target.classList.contains('export-component')){exportComponent(id)}
       if(e.target.classList.contains('edit')){openEdit(id)}
       if(e.target.classList.contains('del')){
         if(confirm('¿Borrar producto?')){
@@ -363,6 +481,23 @@
         }
       }
     })
+
+    if (mobileProductsList) {
+      mobileProductsList.addEventListener('click', e => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const id = btn.getAttribute('data-id');
+        if (!id) return;
+        if (btn.classList.contains('order')) openOrder(id);
+        if (btn.classList.contains('export-component')) exportComponent(id);
+        if (btn.classList.contains('edit')) openEdit(id);
+        if (btn.classList.contains('del')) {
+          if (confirm('¿Borrar producto?')) {
+            deleteProduct(id).then(() => render(search.value));
+          }
+        }
+      });
+    }
 
     function openEdit(id){
       const products = readProducts();
@@ -373,8 +508,13 @@
       document.getElementById('name').value = p.name||'';
       document.getElementById('description').value = p.description||'';
       document.getElementById('supplier').value = p.supplier||'';
-      document.getElementById('priceUsd').value = p.priceUsd||0;
+      const hasNewPricing = p.supplierPriceUsd != null || p.shippingCostUsd != null || p.marginPct != null;
+      supplierPriceUsdEl.value = p.supplierPriceUsd != null ? p.supplierPriceUsd : (p.priceUsd || 0);
+      shippingCostUsdEl.value = p.shippingCostUsd != null ? p.shippingCostUsd : 0;
+      marginPctEl.value = p.marginPct != null ? p.marginPct : (hasNewPricing ? 30 : 0);
+      ivaPctEl.value = p.ivaPct != null ? p.ivaPct : 21;
       document.getElementById('priceArs').value = p.priceArs||0;
+      setTimeout(updatePriceCalculations, 100);
       document.getElementById('stock').value = p.stock||0;
       document.getElementById('leadTime').value = p.leadTime||0;
       document.getElementById('components').value = p.components ? JSON.stringify(p.components,null,2) : '[]';
@@ -385,7 +525,45 @@
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
-    function deleteProduct(id){
+    function openOrder(id){
+      const p = readProducts().find(x => x.id === id);
+      if (!p) return;
+      const qs = `productId=${encodeURIComponent(id)}${p.supplier ? '&providerName=' + encodeURIComponent(p.supplier) : ''}`;
+      window.location.href = `orden-de-compras.html?${qs}`;
+    }
+
+    async function exportComponent(id){
+      const p = readProducts().find(x => x.id === id);
+      if (!p) return;
+      const component = {
+        sku: p.sku || '',
+        qty: 1,
+        name: p.name || '',
+        description: p.description || '',
+        supplier: p.supplier || '',
+        priceUsd: toNumber(p.priceUsd),
+        priceArs: toNumber(p.priceArs),
+        leadTime: toNumber(p.leadTime),
+        stock: toNumber(p.stock),
+        salePriceUsd: toNumber(p.priceUsd),
+        source: 'productos',
+        sourceProductId: p.id || '',
+        sourceProductSku: p.sku || ''
+      };
+      const text = JSON.stringify(component, null, 2);
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          alert('✅ Componente copiado al portapapeles');
+          return;
+        } catch (err) {
+          alert('No se pudo copiar al portapapeles. Te muestro el JSON para copiar manualmente.');
+        }
+      }
+      prompt('Copiá este JSON de componente:', text);
+    }
+
+    function deleteProductLocal(id){
       const list = readProducts().filter(x=>x.id!==id);
       saveProducts(list); render(search.value);
     }
@@ -407,7 +585,11 @@
         name:document.getElementById('name').value.trim(),
         description:document.getElementById('description').value.trim(),
         supplier:document.getElementById('supplier').value.trim(),
-        priceUsd:parseFloat(document.getElementById('priceUsd').value)||0,
+        supplierPriceUsd:parseFloat(supplierPriceUsdEl.value)||0,
+        shippingCostUsd:parseFloat(shippingCostUsdEl.value)||0,
+        marginPct:Number.isFinite(parseFloat(marginPctEl.value)) ? parseFloat(marginPctEl.value) : 30,
+        ivaPct:Number.isFinite(parseFloat(ivaPctEl.value)) ? parseFloat(ivaPctEl.value) : 21,
+        priceUsd:parseFloat(priceSaleUsdEl.textContent.replace(/\$/g,''))||0,
         priceArs:parseFloat(document.getElementById('priceArs').value)||0,
         stock:parseInt(document.getElementById('stock').value)||0,
         leadTime:parseInt(document.getElementById('leadTime').value)||0,
@@ -420,7 +602,7 @@
       if(existing) product.createdAt = existing.createdAt;
       try {
         await saveProduct(product);
-        form.reset(); document.getElementById('productId').value=''; currentTechResources=[]; currentImages=[]; renderTechResources(); renderImagesList(); render();
+        form.reset(); document.getElementById('productId').value=''; currentTechResources=[]; currentImages=[]; renderTechResources(); renderImagesList(); updatePriceCalculations(); render();
         alert('✅ Producto guardado');
       } catch(err) {
         render(); // mostrar igual (guardado local)
@@ -428,10 +610,21 @@
       }
     })
 
-    newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; currentImages = []; renderTechResources(); renderImagesList(); resourceUrl.value=''; imageUpload.value=''; window.scrollTo({top:0,behavior:'smooth'})})
-    cancelBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; currentImages = []; renderTechResources(); renderImagesList(); resourceUrl.value=''; imageUpload.value='';})
+    newBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; currentImages = []; renderTechResources(); renderImagesList(); updatePriceCalculations(); resourceUrl.value=''; imageUpload.value=''; window.scrollTo({top:0,behavior:'smooth'})});
+    cancelBtn.addEventListener('click',()=>{form.reset(); document.getElementById('productId').value=''; currentTechResources = []; currentImages = []; renderTechResources(); renderImagesList(); updatePriceCalculations(); resourceUrl.value=''; imageUpload.value='';});
+    // Event listeners para cálculo de precios
+    ;[supplierPriceUsdEl, shippingCostUsdEl, marginPctEl, ivaPctEl].forEach(el => {
+      if (el) el.addEventListener('input', updatePriceCalculations);
+      if (el) el.addEventListener('change', updatePriceCalculations);
+    });
+
     search.addEventListener('input',e=>render(e.target.value))
     search.addEventListener('keyup',e=>render(e.target.value))
+    if (ordersBtn) {
+      ordersBtn.addEventListener('click', () => {
+        window.location.href = 'orden-de-compras.html';
+      });
+    }
 
     exportBtn.addEventListener('click',()=>{
       const data = JSON.stringify(localReadProducts());
@@ -451,43 +644,66 @@
       }catch(e){alert('JSON inválido')}
     })
 
+    updatePriceCalculations();
+
     // Init: cargar desde API
     (async ()=>{
-      const host = (window.location.hostname || '').toLowerCase();
-      const isProductionHost = host === 'buenahuella.com.ar' || host === 'www.buenahuella.com.ar';
-      let online = isProductionHost;
-      if (!online && typeof checkApiStatus === 'function') {
+      async function fetchProductsDirect() {
+        const urls = [
+          `${window.location.origin}/sistema/api/products`,
+          `${window.location.origin}/api/products`,
+          'https://www.buenahuella.com.ar/sistema/api/products',
+          'https://buenahuella.com.ar/sistema/api/products'
+        ];
+        for (const url of urls) {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const data = await res.json();
+            if (Array.isArray(data)) return data;
+          } catch (e) {}
+        }
+        return null;
+      }
+
+      let online = false;
+      if (typeof checkApiStatus === 'function') {
         online = await Promise.race([
           checkApiStatus(),
           new Promise(resolve => setTimeout(() => resolve(false), 6000))
         ]);
-      }
-      if (!online) {
-        const healthUrls = [
-          `${window.location.origin}/sistema/api/health`,
-          `${window.location.origin}/api/health`,
-          'https://www.buenahuella.com.ar/sistema/api/health',
-          'https://buenahuella.com.ar/sistema/api/health'
-        ];
-        for (const url of healthUrls) {
-          if (online) break;
-          try {
-            const healthRes = await fetch(url);
-            online = healthRes.ok;
-          } catch (e) {}
-        }
       }
       if (apiStatusBadge) {
         apiStatusBadge.style.background = online ? '#2d5a27' : '#888';
         apiStatusBadge.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
       }
 
-      if (online) {
-        await getProducts();
-      } else if (!localReadProducts().length) {
+      const localBackup = localReadProducts();
+      let products = await getProducts();
+      if (!Array.isArray(products)) products = [];
+
+      const directProducts = await fetchProductsDirect();
+      if (Array.isArray(directProducts)) {
+        online = true;
+        // Prioriza API para evitar quedarse con un cache local incompleto.
+        if (directProducts.length || !localBackup.length) {
+          products = directProducts;
+          localSaveProducts(directProducts);
+        }
+      } else if (!products.length && localBackup.length) {
+        products = localBackup;
+        localSaveProducts(localBackup);
+      }
+
+      if (apiStatusBadge) {
+        apiStatusBadge.style.background = online ? '#2d5a27' : '#888';
+        apiStatusBadge.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
+      }
+
+      if (!products.length && !localReadProducts().length) {
         const sample = [
-          {id:uid(),sku:'GWAY-001',name:'Gateway LoRa 12V',description:'Receptor LoRa para monitoreo remoto',supplier:'Buena Huella',priceUsd:120,priceArs:25000,stock:5,leadTime:0,components:[{sku:'CMP-001',qty:1}],technicalInfo:[],images:[],createdAt:new Date().toISOString()},
-          {id:uid(),sku:'SENS-001',name:'Sensor Ultrasónico Nivel',description:'Sensor para medir nivel de agua',supplier:'Buena Huella',priceUsd:45,priceArs:9500,stock:8,leadTime:0,components:[{sku:'CMP-001',qty:1}],technicalInfo:[],images:[],createdAt:new Date().toISOString()}
+          {id:uid(),sku:'GWAY-001',name:'Gateway LoRa 12V',description:'Receptor LoRa para monitoreo remoto',supplier:'Buena Huella',supplierPriceUsd:92,shippingCostUsd:8,marginPct:20,priceUsd:125,priceArs:25000,stock:5,leadTime:0,components:[{sku:'CMP-001',qty:1}],technicalInfo:[],images:[],createdAt:new Date().toISOString()},
+          {id:uid(),sku:'SENS-001',name:'Sensor Ultrasónico Nivel',description:'Sensor para medir nivel de agua',supplier:'Buena Huella',supplierPriceUsd:31,shippingCostUsd:4,marginPct:22,priceUsd:44.87,priceArs:9500,stock:8,leadTime:0,components:[{sku:'CMP-001',qty:1}],technicalInfo:[],images:[],createdAt:new Date().toISOString()}
         ];
         localSaveProducts(sample);
       }
