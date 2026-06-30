@@ -1,15 +1,18 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Componentes - Buena Huella</title>
+  <script src="js/auth.js"></script>
   <style>
     body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f5f5f5}
     header{background:#2d5a27;color:#fff;padding:14px;text-align:center}
+    .brand{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+    .brand img{width:42px;height:42px;object-fit:cover;border-radius:8px;background:#fff}
     .wrap{max-width:1100px;margin:16px auto;padding:12px}
     .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.06);}
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
     input,select,textarea{padding:8px;border:1px solid #ddd;border-radius:6px;width:100%;box-sizing:border-box}
     .grid{display:grid;grid-template-columns:1fr 360px;gap:12px}
     table{width:100%;border-collapse:collapse;font-size:13px}
@@ -23,15 +26,26 @@
     .btn:hover{background:#1e4620}
     .btn.secondary:hover{background:#ddd}
     .two-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    @media(max-width:600px){.two-cols{grid-template-columns:1fr}}
+    .recipe-table-wrap{overflow-x:auto}
+    #recipeTable{width:100%;border-collapse:collapse;font-size:13px}
+    #recipeTable th,#recipeTable td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+    .kpi{padding:8px;background:#f7faf7;border:1px solid #dfe8df;border-radius:6px;font-weight:700}
+    .kpi.sale{background:#e8f5e9;border:2px solid #4caf50;color:#2e7d32}
+    @media(max-width:600px){.two-cols{grid-template-columns:1fr}.brand{gap:8px}}
   </style>
 </head>
 <body>
-  <header><h1>Componentes — Buena Huella</h1></header>
+  <header>
+    <div class="brand">
+      <img src="logo.jpg" alt="Logo Buena Huella">
+      <h1>Componentes â€” Buena Huella</h1>
+    </div>
+  </header>
   <div class="wrap">
     <div class="card">
       <div class="toolbar">
         <input id="search" placeholder="Buscar por SKU, nombre o proveedor" />
+        <span id="apiStatusBadge" class="small" style="padding:6px 10px;border-radius:20px;background:#888;color:#fff">ðŸŸ¡ Verificando API...</span>
         <button class="btn" id="newBtn">+ Nuevo componente</button>
         <button class="btn secondary" id="exportBtn">Exportar JSON</button>
         <button class="btn secondary" id="importBtn">Importar JSON</button>
@@ -53,7 +67,7 @@
               <input id="sku" required />
               <label class="label">Nombre *</label>
               <input id="name" required />
-              <label class="label">Descripción</label>
+              <label class="label">DescripciÃ³n</label>
               <textarea id="description" rows="3"></textarea>
               <label class="label">Proveedor</label>
               <input id="supplier" />
@@ -69,7 +83,7 @@
               </div>
               <div class="two-cols">
                 <div>
-                  <label class="label">Lead Time (días)</label>
+                  <label class="label">Lead Time (dÃ­as)</label>
                   <input id="leadTime" type="number" step="1" value="0" />
                 </div>
                 <div>
@@ -88,10 +102,71 @@
         </aside>
       </div>
     </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>Constructor de producto propio</h3>
+      <div class="toolbar">
+        <select id="componentSelect"></select>
+        <input id="componentQty" type="number" step="0.01" min="0.01" value="1" style="max-width:120px" />
+        <button class="btn" id="addToRecipeBtn">Agregar componente</button>
+        <button class="btn secondary" id="clearRecipeBtn">Limpiar receta</button>
+      </div>
+
+      <div class="recipe-table-wrap">
+        <table id="recipeTable">
+          <thead><tr><th>SKU</th><th>Componente</th><th>Cant</th><th>Unit USD</th><th>Subtotal USD</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="two-cols" style="margin-top:10px">
+        <div class="kpi">Costo componentes USD: <span id="materialsCostUsd">0.00</span></div>
+        <div>
+          <label class="label">Costo flete USD</label>
+          <input id="recipeShippingUsd" type="number" step="0.01" value="0" />
+        </div>
+      </div>
+
+      <div class="two-cols" style="margin-top:8px">
+        <div>
+          <label class="label">SKU producto final *</label>
+          <input id="finalSku" placeholder="PROD-001" />
+        </div>
+        <div>
+          <label class="label">Nombre producto final *</label>
+          <input id="finalName" placeholder="Producto propio" />
+        </div>
+      </div>
+
+      <div class="two-cols" style="margin-top:8px">
+        <div>
+          <label class="label">Proveedor</label>
+          <input id="finalSupplier" value="Buena Huella (Propio)" />
+        </div>
+        <div>
+          <label class="label">Margen bruto %</label>
+          <input id="recipeMarginPct" type="number" step="0.1" min="0" max="100" value="30" />
+        </div>
+      </div>
+
+      <label class="label" style="margin-top:8px">DescripciÃ³n</label>
+      <textarea id="finalDescription" rows="2" placeholder="DescripciÃ³n del producto final"></textarea>
+
+      <div class="two-cols" style="margin-top:8px">
+        <div class="kpi">Costo total USD: <span id="finalCostUsd">0.00</span></div>
+        <div class="kpi sale">Precio venta USD (sin IVA): <span id="finalSaleUsd">0.00</span></div>
+      </div>
+
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="saveAsProductBtn">Guardar como producto</button>
+        <a class="btn secondary" href="productos.html" style="text-decoration:none;display:inline-flex;align-items:center">Ir a Productos</a>
+      </div>
+    </div>
+
     <p style="margin-top:10px" class="small">Volver al <a href="index.html">inicio</a></p>
   </div>
 
-  <script src="js/api.js"></script>
+  <script src="js/api.js?v=20260619-6"></script>
   <script>
     // Storage: usa api.js (API + localStorage fallback)
     function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
@@ -107,9 +182,98 @@
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
     const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const apiStatusBadge = document.getElementById('apiStatusBadge');
+    const componentSelectEl = document.getElementById('componentSelect');
+    const componentQtyEl = document.getElementById('componentQty');
+    const addToRecipeBtn = document.getElementById('addToRecipeBtn');
+    const clearRecipeBtn = document.getElementById('clearRecipeBtn');
+    const recipeTableBody = document.querySelector('#recipeTable tbody');
+    const materialsCostUsdEl = document.getElementById('materialsCostUsd');
+    const recipeShippingUsdEl = document.getElementById('recipeShippingUsd');
+    const recipeMarginPctEl = document.getElementById('recipeMarginPct');
+    const finalSkuEl = document.getElementById('finalSku');
+    const finalNameEl = document.getElementById('finalName');
+    const finalSupplierEl = document.getElementById('finalSupplier');
+    const finalDescriptionEl = document.getElementById('finalDescription');
+    const finalCostUsdEl = document.getElementById('finalCostUsd');
+    const finalSaleUsdEl = document.getElementById('finalSaleUsd');
+    const saveAsProductBtn = document.getElementById('saveAsProductBtn');
+    let recipeItems = [];
 
     function escapeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
     function escapeCsv(s){const str = String(s||''); return /[,"\n\r]/.test(str) ? '"'+str.replace(/"/g,'""')+'"' : str}
+    function isProductComponentRef(obj){
+      return !!obj && typeof obj === 'object' && ('sku' in obj) && (('qty' in obj) || ('sourceProductId' in obj) || obj.source === 'productos');
+    }
+    function upsertComponentRefs(refs){
+      const list = readComponents();
+      let imported = 0;
+      for(const ref of refs){
+        const has = key => Object.prototype.hasOwnProperty.call(ref, key);
+        const sku = String(ref.sku || '').trim();
+        if(!sku) continue;
+        const name = String(ref.name || '').trim() || sku;
+        const description = String(ref.description || '').trim();
+        const supplier = String(ref.supplier || '').trim();
+        const sourceProductId = String(ref.sourceProductId || '').trim();
+        const sourceProductSku = String(ref.sourceProductSku || '').trim();
+        const incomingPriceUsd = Number(ref.priceUsd);
+        const incomingPriceArs = Number(ref.priceArs);
+        const incomingLeadTime = Number(ref.leadTime);
+        const incomingStock = Number(ref.stock);
+        const incomingSalePriceUsd = Number(ref.salePriceUsd);
+        const existing = list.find(x => String(x.sku || '').trim() === sku);
+        if(existing){
+          existing.name = name;
+          if(description) existing.description = description;
+          if(supplier) existing.supplier = supplier;
+          if(has('priceUsd') && Number.isFinite(incomingPriceUsd)) existing.priceUsd = incomingPriceUsd;
+          if(has('priceArs') && Number.isFinite(incomingPriceArs)) existing.priceArs = incomingPriceArs;
+          if(has('leadTime') && Number.isFinite(incomingLeadTime)) existing.leadTime = incomingLeadTime;
+          if(has('stock') && Number.isFinite(incomingStock)) existing.stock = incomingStock;
+          if(sourceProductId){
+            const marker = `Importado desde producto: ${sourceProductId}`;
+            if(!(existing.notes || '').includes(marker)){
+              existing.notes = [existing.notes, marker].filter(Boolean).join(' | ');
+            }
+          }
+          if(sourceProductSku){
+            const skuMarker = `SKU origen: ${sourceProductSku}`;
+            if(!(existing.notes || '').includes(skuMarker)){
+              existing.notes = [existing.notes, skuMarker].filter(Boolean).join(' | ');
+            }
+          }
+          if(Number.isFinite(incomingSalePriceUsd)){
+            const saleMarker = `Venta USD: ${incomingSalePriceUsd.toFixed(2)}`;
+            if(!(existing.notes || '').includes(saleMarker)){
+              existing.notes = [existing.notes, saleMarker].filter(Boolean).join(' | ');
+            }
+          }
+          continue;
+        }
+        const notes = [];
+        if(sourceProductId) notes.push(`Importado desde producto: ${sourceProductId}`);
+        else notes.push('Importado desde Productos');
+        if(sourceProductSku) notes.push(`SKU origen: ${sourceProductSku}`);
+        if(Number.isFinite(incomingSalePriceUsd)) notes.push(`Venta USD: ${incomingSalePriceUsd.toFixed(2)}`);
+        list.push({
+          id: uid(),
+          sku,
+          name,
+          description,
+          supplier,
+          priceUsd: Number.isFinite(incomingPriceUsd) ? incomingPriceUsd : 0,
+          priceArs: Number.isFinite(incomingPriceArs) ? incomingPriceArs : 0,
+          leadTime: Number.isFinite(incomingLeadTime) ? incomingLeadTime : 0,
+          stock: Number.isFinite(incomingStock) ? incomingStock : 0,
+          notes: notes.join(' | '),
+          createdAt: new Date().toISOString()
+        });
+        imported++;
+      }
+      saveComponents(list);
+      return imported;
+    }
 
     function render(filter){
       const q = (filter||'').toLowerCase();
@@ -120,7 +284,7 @@
       tableBody.innerHTML = '';
       for(const c of components){
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><strong>${escapeHtml(c.sku||'')}</strong></td><td>${escapeHtml(c.name||'')}</td><td>${(c.priceUsd||0).toFixed(2)}</td><td>${(c.priceArs||0).toFixed(2)}</td><td>${escapeHtml(c.supplier||'')}</td><td>${c.leadTime||0}</td><td class="actions"><button data-id="${c.id}" class="btn secondary edit">Editar</button><button data-id="${c.id}" class="btn secondary del">Borrar</button></td>`;
+        tr.innerHTML = `<td><strong>${escapeHtml(c.sku||'')}</strong></td><td>${escapeHtml(c.name||'')}</td><td>${(Number(c.priceUsd)||0).toFixed(2)}</td><td>${(Number(c.priceArs)||0).toFixed(2)}</td><td>${escapeHtml(c.supplier||'')}</td><td>${c.leadTime||0}</td><td class="actions"><button data-id="${c.id}" class="btn secondary edit">Editar</button><button data-id="${c.id}" class="btn secondary del">Borrar</button></td>`;
         tableBody.appendChild(tr);
       }
     }
@@ -128,7 +292,7 @@
     tableBody.addEventListener('click',e=>{
       const id = e.target.getAttribute('data-id');
       if(e.target.classList.contains('edit')){openEdit(id)}
-      if(e.target.classList.contains('del')){if(confirm('¿Borrar componente?')){deleteComponent(id)}}
+      if(e.target.classList.contains('del')){removeComponent(id)}
     })
 
     function openEdit(id){
@@ -148,10 +312,11 @@
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
-    async function deleteComponent(id){
-      if(!confirm('¿Borrar componente?')) return;
+    async function removeComponent(id){
+      if(!confirm('Â¿Borrar componente?')) return;
       await deleteComponent(id);
       render(search.value);
+      populateComponentSelect();
     }
 
     form.addEventListener('submit', async e=>{
@@ -174,6 +339,7 @@
       if(existing) component.createdAt = existing.createdAt;
       await saveComponent(component);
       form.reset(); document.getElementById('componentId').value=''; render();
+      populateComponentSelect();
       alert('Componente guardado');
     })
 
@@ -182,26 +348,65 @@
     search.addEventListener('input',e=>render(e.target.value))
 
     exportBtn.addEventListener('click',()=>{
-      const data = localStorage.getItem(STORAGE_KEY) || '[]';
+      const data = JSON.stringify(readComponents());
       const blob = new Blob([data],{type:'application/json'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href=url; a.download='componentes.json'; a.click(); URL.revokeObjectURL(url);
     })
 
+    async function saveComponentList(list){
+      for(const c of list){
+        if(!c.id) c.id = uid();
+        await saveComponent(c);
+      }
+    }
+
     importBtn.addEventListener('click',async ()=>{
-      const text = prompt('Pega aquí el JSON de componentes o cancela');
+      const text = prompt('Pega aqui el JSON de componentes o cancela');
       if(!text) return;
       try{
         const parsed = JSON.parse(text);
         if(Array.isArray(parsed)){
-          saveComponents(parsed); render(); alert('Importado: '+parsed.length+' componentes');
-        } else alert('JSON inválido, se espera un array');
-      }catch(e){alert('JSON inválido')}
+          if(parsed.every(isProductComponentRef)){
+            const refs = parsed.map(r=>({
+              id: uid(), sku:String(r.sku||'').trim(), name:String(r.name||r.sku||'').trim(),
+              description:String(r.description||'').trim(), supplier:String(r.supplier||'').trim(),
+              priceUsd:Number(r.priceUsd)||0, priceArs:Number(r.priceArs)||0,
+              leadTime:Number(r.leadTime)||0, stock:Number(r.stock)||0,
+              notes:r.sourceProductId?'Importado desde producto: '+r.sourceProductId:'Importado desde Productos',
+              createdAt:new Date().toISOString()
+            })).filter(r=>r.sku);
+            await saveComponentList(refs);
+            render(); populateComponentSelect();
+            alert('Importados desde Productos: '+refs.length+' componentes');
+            return;
+          }
+          await saveComponentList(parsed);
+          render(); populateComponentSelect();
+          alert('Importado: '+parsed.length+' componentes');
+          return;
+        }
+        if(isProductComponentRef(parsed)){
+          const ref = {
+            id:uid(), sku:String(parsed.sku||'').trim(), name:String(parsed.name||parsed.sku||'').trim(),
+            description:String(parsed.description||'').trim(), supplier:String(parsed.supplier||'').trim(),
+            priceUsd:Number(parsed.priceUsd)||0, priceArs:Number(parsed.priceArs)||0,
+            leadTime:Number(parsed.leadTime)||0, stock:Number(parsed.stock)||0,
+            notes:parsed.sourceProductId?'Importado desde producto: '+parsed.sourceProductId:'Importado desde Productos',
+            createdAt:new Date().toISOString()
+          };
+          if(ref.sku) await saveComponent(ref);
+          render(); populateComponentSelect();
+          alert('Importado 1 componente desde Productos');
+          return;
+        }
+        alert('JSON invalido. Pega un array de componentes o un objeto exportado con el boton Comp.');
+      }catch(e){alert('JSON invalido: '+e.message)}
     })
 
     exportCsvBtn.addEventListener('click',()=>{
       const components = readComponents();
-      let csv = 'SKU,Nombre,Descripción,Proveedor,Precio USD,Precio ARS,Lead Time (días),Stock,Notas\n';
+      let csv = 'SKU,Nombre,DescripciÃ³n,Proveedor,Precio USD,Precio ARS,Lead Time (dÃ­as),Stock,Notas\n';
       for(const c of components){
         csv += [escapeCsv(c.sku),escapeCsv(c.name),escapeCsv(c.description),escapeCsv(c.supplier),c.priceUsd,c.priceArs,c.leadTime,c.stock,escapeCsv(c.notes)].join(',')+'\n';
       }
@@ -210,29 +415,153 @@
       const a = document.createElement('a'); a.href=url; a.download='componentes.csv'; a.click(); URL.revokeObjectURL(url);
     })
 
+    function populateComponentSelect(){
+      const components = readComponents().slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+      componentSelectEl.innerHTML = '<option value="">-- Seleccionar componente --</option>';
+      for(const c of components){
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.sku || 'SIN-SKU'} - ${c.name || 'Sin nombre'} (USD ${(Number(c.priceUsd)||0).toFixed(2)})`;
+        componentSelectEl.appendChild(opt);
+      }
+    }
+
+    function getRecipeCosts(){
+      const materialsUsd = recipeItems.reduce((acc, item)=>acc + ((Number(item.unitUsd)||0) * (Number(item.qty)||0)), 0);
+      const shippingUsd = Number(recipeShippingUsdEl.value) || 0;
+      const marginPct = Number(recipeMarginPctEl.value);
+      const safeMargin = Number.isFinite(marginPct) ? marginPct : 30;
+      const totalCost = materialsUsd + shippingUsd;
+      const marginDecimal = safeMargin / 100;
+      const saleUsd = marginDecimal >= 1 ? totalCost * 2 : totalCost / (1 - marginDecimal);
+      return {materialsUsd, shippingUsd, marginPct:safeMargin, totalCost, saleUsd};
+    }
+
+    function renderRecipe(){
+      recipeTableBody.innerHTML = '';
+      for(let i=0;i<recipeItems.length;i++){
+        const item = recipeItems[i];
+        const subtotal = (Number(item.unitUsd)||0) * (Number(item.qty)||0);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(item.sku||'')}</td><td>${escapeHtml(item.name||'')}</td><td>${Number(item.qty)||0}</td><td>${(Number(item.unitUsd)||0).toFixed(2)}</td><td>${subtotal.toFixed(2)}</td><td><button type="button" class="btn secondary" data-remove-idx="${i}">Quitar</button></td>`;
+        recipeTableBody.appendChild(tr);
+      }
+      const costs = getRecipeCosts();
+      materialsCostUsdEl.textContent = costs.materialsUsd.toFixed(2);
+      finalCostUsdEl.textContent = costs.totalCost.toFixed(2);
+      finalSaleUsdEl.textContent = costs.saleUsd.toFixed(2);
+    }
+
+    recipeTableBody.addEventListener('click', e=>{
+      const idx = e.target.getAttribute('data-remove-idx');
+      if(idx === null) return;
+      recipeItems.splice(Number(idx), 1);
+      renderRecipe();
+    });
+
+    addToRecipeBtn.addEventListener('click', ()=>{
+      const componentId = componentSelectEl.value;
+      const qty = Number(componentQtyEl.value) || 0;
+      if(!componentId) return alert('SeleccionÃ¡ un componente');
+      if(qty <= 0) return alert('La cantidad debe ser mayor a 0');
+      const c = readComponents().find(x=>x.id===componentId);
+      if(!c) return alert('Componente no encontrado');
+      const existing = recipeItems.find(x=>x.id===componentId);
+      if(existing){
+        existing.qty = (Number(existing.qty)||0) + qty;
+      } else {
+        recipeItems.push({
+          id:c.id,
+          sku:c.sku||'',
+          name:c.name||'',
+          qty,
+          unitUsd:Number(c.priceUsd)||0,
+          leadTime:Number(c.leadTime)||0
+        });
+      }
+      componentQtyEl.value = '1';
+      renderRecipe();
+    });
+
+    clearRecipeBtn.addEventListener('click', ()=>{
+      recipeItems = [];
+      renderRecipe();
+    });
+
+    recipeShippingUsdEl.addEventListener('input', renderRecipe);
+    recipeMarginPctEl.addEventListener('input', renderRecipe);
+
+    saveAsProductBtn.addEventListener('click', async ()=>{
+      if(!recipeItems.length) return alert('AgregÃ¡ al menos un componente a la receta');
+      const sku = finalSkuEl.value.trim();
+      const name = finalNameEl.value.trim();
+      if(!sku) return alert('IngresÃ¡ SKU del producto final');
+      if(!name) return alert('IngresÃ¡ nombre del producto final');
+
+      const costs = getRecipeCosts();
+      const rateObj = JSON.parse(localStorage.getItem('buena_dolar_oficial') || 'null');
+      const rate = rateObj ? Number(rateObj.rate) : null;
+      const maxLeadTime = recipeItems.reduce((acc, item)=>Math.max(acc, Number(item.leadTime)||0), 0);
+      const product = {
+        id: uid(),
+        sku,
+        name,
+        description: finalDescriptionEl.value.trim(),
+        supplier: finalSupplierEl.value.trim() || 'Buena Huella (Propio)',
+        supplierPriceUsd: Number(costs.materialsUsd.toFixed(2)),
+        shippingCostUsd: Number(costs.shippingUsd.toFixed(2)),
+        marginPct: Number(costs.marginPct.toFixed(2)),
+        ivaPct: 21,
+        priceUsd: Number(costs.saleUsd.toFixed(2)),
+        priceArs: rate ? Number((costs.saleUsd * rate).toFixed(2)) : 0,
+        stock: 0,
+        leadTime: maxLeadTime,
+        components: recipeItems.map(item=>({sku:item.sku, qty:Number(item.qty)})),
+        technicalInfo: [],
+        images: [],
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        await saveProduct(product);
+        alert('Producto propio guardado en Productos');
+      } catch(err) {
+        alert('Producto guardado localmente. Error API: ' + err.message);
+      }
+    });
+
     // Init: cargar desde API
     (async ()=>{
       const online = await checkApiStatus();
-      const statusEl = document.createElement('div');
-      statusEl.style.cssText = 'position:fixed;bottom:8px;right:8px;padding:6px 10px;border-radius:20px;font-size:12px;z-index:9999;color:#fff;background:' + (online ? '#2d5a27' : '#888');
-      statusEl.textContent = online ? '🟢 API conectada' : '🟡 Modo offline';
-      document.body.appendChild(statusEl);
+      const localBackup = localReadComponents();
+      if (apiStatusBadge) {
+        apiStatusBadge.style.background = online ? '#2d5a27' : '#888';
+        apiStatusBadge.textContent = online ? 'ðŸŸ¢ API conectada' : 'ðŸŸ¡ Modo offline';
+      }
 
       if (online) {
-        await getComponents();
+        const apiComponents = await getComponents();
+        if (Array.isArray(apiComponents) && !apiComponents.length && localBackup.length) {
+          // Evita perder datos locales cuando la API responde vacÃ­o.
+          localSaveComponents(localBackup);
+        }
       } else if (!localReadComponents().length) {
         const sample = [
-          {id:uid(),sku:'CMP-001',name:'Plaqueta Controlador',description:'PCB ensamblada con firmware',supplier:'Buena Huella (Interna)',priceUsd:15,priceArs:3200,leadTime:0,stock:20,notes:'Producción interna',createdAt:new Date().toISOString()},
-          {id:uid(),sku:'CMP-002',name:'Gabinete ABS 3D',description:'Gabinete impreso en ABS color negro',supplier:'Buena Huella (Interna)',priceUsd:8,priceArs:1700,leadTime:0,stock:15,notes:'Fabricación propia',createdAt:new Date().toISOString()},
+          {id:uid(),sku:'CMP-001',name:'Plaqueta Controlador',description:'PCB ensamblada con firmware',supplier:'Buena Huella (Interna)',priceUsd:15,priceArs:3200,leadTime:0,stock:20,notes:'ProducciÃ³n interna',createdAt:new Date().toISOString()},
+          {id:uid(),sku:'CMP-002',name:'Gabinete ABS 3D',description:'Gabinete impreso en ABS color negro',supplier:'Buena Huella (Interna)',priceUsd:8,priceArs:1700,leadTime:0,stock:15,notes:'FabricaciÃ³n propia',createdAt:new Date().toISOString()},
           {id:uid(),sku:'CMP-003',name:'Tornillo M3 Inox',description:'Tornillo acero inoxidable 15mm',supplier:'Proveedor Local',priceUsd:0.05,priceArs:11,leadTime:3,stock:500,notes:'Compras a granel',createdAt:new Date().toISOString()},
-          {id:uid(),sku:'CMP-004',name:'Sensor Ultrasónico',description:'HC-SR04 o similar para nivel',supplier:'Distribuidor Electrónica',priceUsd:2.5,priceArs:550,leadTime:7,stock:30,notes:'Importación',createdAt:new Date().toISOString()}
+          {id:uid(),sku:'CMP-004',name:'Sensor UltrasÃ³nico',description:'HC-SR04 o similar para nivel',supplier:'Distribuidor ElectrÃ³nica',priceUsd:2.5,priceArs:550,leadTime:7,stock:30,notes:'ImportaciÃ³n',createdAt:new Date().toISOString()}
         ];
         localSaveComponents(sample);
       }
+      await getProducts();
       render();
+      populateComponentSelect();
+      renderRecipe();
     })();
 
     window._buena = {readComponents:localReadComponents, render};
   </script>
 </body>
 </html>
+
